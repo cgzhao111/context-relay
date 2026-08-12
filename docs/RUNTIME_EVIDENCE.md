@@ -21,8 +21,7 @@ The first evidence run is pinned to:
 | Codex Windows x64 package SHA512 integrity | `sha512-DnsSTlnnzleTxvLwIGnBitKInscxn2I7qASqosS8Fv+qysBygd+ZiBn/SQsRCgQ28PAlsNzmd3Gf3ZTecolAmg==` |
 | Node.js | `22.23.2` |
 | Node.js Windows x64 ZIP SHA256 | `1177b4137ba5adaa56354ae40f1080c7450e8ae09cecb47da459d1c52ac99f97` |
-| MinGit | `2.55.0.windows.4` |
-| MinGit Windows x64 ZIP SHA256 | `4e03f94c2ffbf70be337e005cee02661c732dbfc81031a078bda9299b9a7d644` |
+| Repository commit ZIP SHA256 | `2423268ab7a048114506695980bca783cf8f7a943901e669363650aba433caa7` |
 
 Evidence from this run must not be reused for a different repository commit,
 CLI version, Node version, or harness revision. A later change requires a new
@@ -91,8 +90,11 @@ The user performs only the two security-sensitive host actions:
 2. inside Sandbox, complete `codex login --device-auth` in the browser.
 
 The generated launcher starts automatically inside Sandbox, installs
-checksum-pinned MinGit, Node.js, and both the Codex launcher and Windows x64
-payload, then installs from the pinned public commit. It compares the installed
+checksum-pinned Node.js and both the Codex launcher and Windows x64 payload,
+then downloads the pinned public commit archive, verifies its SHA256, and uses
+that extracted tree as a local Marketplace source. The separate Layer 1 run
+proves installation from the remote Git Marketplace and exact source/cache
+tree equality. The Sandbox compares the installed
 Codex executable with the executable extracted from the verified Windows
 package, pauses for device login, then creates a new ephemeral
 Codex task after every plugin-state change and records each explicit Skill
