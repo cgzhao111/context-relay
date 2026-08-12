@@ -1,0 +1,39 @@
+{
+  "name": "context-relay",
+  "version": "0.1.0",
+  "description": "Create evidence-backed, privacy-aware handoff packs for long-running AI coding work.",
+  "author": {
+    "name": "cgzhao111",
+    "url": "https://github.com/cgzhao111"
+  },
+  "homepage": "https://github.com/cgzhao111/context-relay",
+  "repository": "https://github.com/cgzhao111/context-relay",
+  "license": "Apache-2.0",
+  "keywords": [
+    "codex",
+    "handoff",
+    "context",
+    "agents",
+    "productivity"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Context Relay",
+    "shortDescription": "Verified project handoffs for fresh AI tasks",
+    "longDescription": "Turn the context visible to an AI coding task plus authorized workspace evidence into a versioned, privacy-aware handoff pack. Context Relay separates verified work from plans and unknowns, checks freshness, and creates a clean bootstrap prompt for the next task.",
+    "developerName": "cgzhao111",
+    "category": "Productivity",
+    "capabilities": [
+      "Structured handoffs",
+      "Evidence validation",
+      "Privacy checks"
+    ],
+    "websiteURL": "https://github.com/cgzhao111/context-relay",
+    "defaultPrompt": [
+      "Create a verified handoff pack for this project.",
+      "Resume this project from its latest handoff and verify what changed.",
+      "Audit this handoff for stale claims, missing evidence, and secrets."
+    ],
+    "brandColor": "#2563EB"
+  }
+}

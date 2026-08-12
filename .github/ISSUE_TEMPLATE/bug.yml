@@ -1,0 +1,35 @@
+name: Bug report
+description: Report a reproducible correctness, safety, or compatibility problem
+title: "[Bug]: "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: Use synthetic or redacted data only. Never paste credentials or private conversation content.
+  - type: textarea
+    id: summary
+    attributes:
+      label: Summary
+      description: What did Context Relay do, and what should it have done?
+    validations:
+      required: true
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Minimal reproduction
+      description: Include a synthetic handoff and exact command or prompt.
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Version or commit
+    validations:
+      required: true
+  - type: textarea
+    id: verification
+    attributes:
+      label: Verification performed
+      description: List tests or checks you ran and their results.
+    validations:
+      required: true

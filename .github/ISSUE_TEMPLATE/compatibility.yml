@@ -1,0 +1,32 @@
+name: Compatibility report
+description: Share a synthetic success, partial success, or failure from a host surface
+title: "[Compatibility]: "
+labels: [compatibility]
+body:
+  - type: dropdown
+    id: result
+    attributes:
+      label: Result
+      options: [Success, Partial, Failure]
+    validations:
+      required: true
+  - type: input
+    id: host
+    attributes:
+      label: Host and version
+      placeholder: Codex desktop, CLI, or another compatible host
+    validations:
+      required: true
+  - type: input
+    id: commit
+    attributes:
+      label: Context Relay version or commit
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Reproduction and observed behavior
+      description: Use only synthetic or redacted material.
+    validations:
+      required: true

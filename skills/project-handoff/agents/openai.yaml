@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Handoff"
+  short_description: "Create and verify evidence-backed project handoffs"
+  default_prompt: "Use $project-handoff to create a verified handoff pack for this project."

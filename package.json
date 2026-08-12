@@ -1,0 +1,45 @@
+{
+  "name": "@cgzhao111/context-relay",
+  "version": "0.1.0",
+  "description": "Evidence-backed handoff packs for long-running AI coding work",
+  "type": "module",
+  "private": false,
+  "license": "Apache-2.0",
+  "author": "cgzhao111",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/cgzhao111/context-relay.git"
+  },
+  "homepage": "https://github.com/cgzhao111/context-relay#readme",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "test": "node --test",
+    "check": "node --test && node test/repository-check.mjs",
+    "snapshot": "node skills/project-handoff/scripts/snapshot-workspace.mjs",
+    "validate:handoff": "node skills/project-handoff/scripts/validate-handoff.mjs"
+  },
+  "bin": {
+    "context-relay-snapshot": "./skills/project-handoff/scripts/snapshot-workspace.mjs",
+    "context-relay-validate": "./skills/project-handoff/scripts/validate-handoff.mjs"
+  },
+  "files": [
+    ".codex-plugin/",
+    "skills/",
+    "README.md",
+    "LICENSE",
+    "SECURITY.md"
+  ],
+  "keywords": [
+    "codex",
+    "ai-agent",
+    "handoff",
+    "context-engineering",
+    "developer-tools"
+  ],
+  "devDependencies": {
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1"
+  }
+}

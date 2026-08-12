@@ -1,0 +1,9 @@
+node_modules/
+coverage/
+.DS_Store
+Thumbs.db
+*.log
+*.tmp
+*.local.json
+handoff.private.json
+PROJECT_HANDOFF.private.md

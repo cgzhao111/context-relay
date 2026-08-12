@@ -1,0 +1,347 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/cgzhao111/context-relay/main/skills/project-handoff/references/handoff.schema.json",
+  "title": "Context Relay project handoff",
+  "description": "Portable, evidence-backed project state passed from one coding-agent task to another.",
+  "type": "object",
+  "required": [
+    "schema_version",
+    "handoff_id",
+    "generated_at",
+    "source_completeness",
+    "project",
+    "snapshot",
+    "source_precedence",
+    "objective",
+    "deliverables",
+    "work_items",
+    "decisions",
+    "constraints",
+    "references",
+    "next_actions",
+    "bootstrap_prompt",
+    "privacy"
+  ],
+  "properties": {
+    "schema_version": {
+      "const": "1.0.0"
+    },
+    "handoff_id": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 128,
+      "pattern": "^[A-Za-z0-9._-]+$"
+    },
+    "generated_at": {
+      "$ref": "#/$defs/dateTime"
+    },
+    "source_completeness": {
+      "enum": [
+        "VISIBLE_CONTEXT_ONLY",
+        "USER_TRANSCRIPT",
+        "FULL_THREAD_READ",
+        "PARTIAL_THREAD_READ"
+      ]
+    },
+    "project": {
+      "type": "object",
+      "required": ["name", "root"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1, "maxLength": 200 },
+        "root": { "type": "string", "minLength": 1 },
+        "repository_url": { "type": ["string", "null"] },
+        "description": { "type": "string" },
+        "recipient": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "snapshot": {
+      "$ref": "#/$defs/snapshot"
+    },
+    "source_precedence": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "objective": {
+      "type": "string",
+      "minLength": 1
+    },
+    "deliverables": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/deliverable" }
+    },
+    "work_items": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/workItem" }
+    },
+    "decisions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/decision" }
+    },
+    "constraints": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "references": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/reference" }
+    },
+    "next_actions": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/nextAction" }
+    },
+    "bootstrap_prompt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "privacy": {
+      "$ref": "#/$defs/privacy"
+    }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "dateTime": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "sha256": {
+      "type": "string",
+      "pattern": "^(sha256:)?[a-fA-F0-9]{64}$"
+    },
+    "snapshot": {
+      "type": "object",
+      "required": ["captured_at", "digest_algorithm", "files"],
+      "properties": {
+        "captured_at": { "$ref": "#/$defs/dateTime" },
+        "digest_algorithm": { "const": "sha256" },
+        "git": {
+          "type": ["object", "null"],
+          "required": ["commit", "branch", "dirty"],
+          "properties": {
+            "commit": {
+              "type": "string",
+              "pattern": "^[a-fA-F0-9]{7,64}$"
+            },
+            "branch": { "type": ["string", "null"] },
+            "dirty": { "type": "boolean" }
+          },
+          "additionalProperties": false
+        },
+        "files": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["path", "digest", "size", "modified_at"],
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "digest": { "$ref": "#/$defs/sha256" },
+              "size": { "type": "integer", "minimum": 0 },
+              "modified_at": { "$ref": "#/$defs/dateTime" }
+            },
+            "additionalProperties": false
+          }
+        },
+        "deleted_files": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "type": "string", "minLength": 1 }
+        },
+        "coverage_notes": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "evidence": {
+      "type": "object",
+      "required": ["type", "ref"],
+      "properties": {
+        "type": {
+          "enum": [
+            "FILE",
+            "FILE_DIGEST",
+            "GIT_COMMIT",
+            "TEST_RESULT",
+            "COMMAND_OUTPUT",
+            "DEPLOYMENT",
+            "USER_CONFIRMATION",
+            "EXTERNAL_LINK"
+          ]
+        },
+        "ref": { "type": "string", "minLength": 1 },
+        "digest": { "$ref": "#/$defs/sha256" },
+        "outcome": { "enum": ["PASSED", "FAILED", "UNKNOWN"] },
+        "observed_at": { "$ref": "#/$defs/dateTime" },
+        "note": { "type": "string" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "type": { "const": "FILE_DIGEST" } }, "required": ["type"] },
+          "then": { "required": ["digest"] }
+        },
+        {
+          "if": { "properties": { "type": { "const": "TEST_RESULT" } }, "required": ["type"] },
+          "then": { "required": ["outcome", "observed_at"] }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "deliverable": {
+      "type": "object",
+      "required": ["id", "name", "status", "evidence"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "path": { "type": ["string", "null"] },
+        "status": { "$ref": "#/$defs/workStatus" },
+        "summary": { "type": "string" },
+        "evidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidence" }
+        },
+        "blocked_by": { "type": "string", "minLength": 1 },
+        "stale_reason": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "VERIFIED" } }, "required": ["status"] },
+          "then": { "properties": { "evidence": { "type": "array", "minItems": 1 } } }
+        },
+        {
+          "if": { "properties": { "status": { "const": "BLOCKED" } }, "required": ["status"] },
+          "then": { "required": ["blocked_by"] }
+        },
+        {
+          "if": { "properties": { "status": { "const": "STALE" } }, "required": ["status"] },
+          "then": { "required": ["stale_reason"] }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "workStatus": {
+      "enum": [
+        "VERIFIED",
+        "IMPLEMENTED_NOT_VERIFIED",
+        "PLANNED",
+        "UNKNOWN",
+        "BLOCKED",
+        "STALE"
+      ]
+    },
+    "workItem": {
+      "type": "object",
+      "required": ["id", "title", "status", "summary", "evidence"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "title": { "type": "string", "minLength": 1 },
+        "status": { "$ref": "#/$defs/workStatus" },
+        "summary": { "type": "string", "minLength": 1 },
+        "evidence": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/evidence" }
+        },
+        "blocked_by": { "type": "string", "minLength": 1 },
+        "stale_reason": { "type": "string", "minLength": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "VERIFIED" } }, "required": ["status"] },
+          "then": { "properties": { "evidence": { "type": "array", "minItems": 1 } } }
+        },
+        {
+          "if": { "properties": { "status": { "const": "BLOCKED" } }, "required": ["status"] },
+          "then": { "required": ["blocked_by"] }
+        },
+        {
+          "if": { "properties": { "status": { "const": "STALE" } }, "required": ["status"] },
+          "then": { "required": ["stale_reason"] }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "decision": {
+      "type": "object",
+      "required": ["id", "status", "summary", "evidence"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["ACTIVE", "SUPERSEDED"] },
+        "summary": { "type": "string", "minLength": 1 },
+        "rationale": { "type": "string" },
+        "decided_at": { "$ref": "#/$defs/dateTime" },
+        "superseded_by": { "type": "string", "minLength": 1 },
+        "evidence": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/evidence" }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "status": { "const": "SUPERSEDED" } }, "required": ["status"] },
+          "then": { "required": ["superseded_by"] }
+        }
+      ],
+      "additionalProperties": false
+    },
+    "reference": {
+      "type": "object",
+      "required": ["kind", "value", "status"],
+      "properties": {
+        "kind": { "enum": ["FILE", "URL", "COMMIT", "DOCUMENT"] },
+        "value": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["VERIFIED", "UNVERIFIED", "MISSING"] },
+        "digest": { "$ref": "#/$defs/sha256" },
+        "note": { "type": "string" }
+      },
+      "additionalProperties": false
+    },
+    "nextAction": {
+      "type": "object",
+      "required": ["title"],
+      "properties": {
+        "title": { "type": "string", "minLength": 1 },
+        "details": { "type": "string" },
+        "owner": { "type": ["string", "null"] }
+      },
+      "additionalProperties": false
+    },
+    "privacy": {
+      "type": "object",
+      "required": ["scan_status", "redactions_applied", "findings"],
+      "properties": {
+        "scan_status": { "enum": ["NOT_RUN", "PASSED", "FINDINGS", "REDACTED"] },
+        "scanned_at": { "$ref": "#/$defs/dateTime" },
+        "redactions_applied": { "type": "boolean" },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["kind", "path"],
+            "properties": {
+              "kind": { "enum": ["SECRET", "EMAIL", "PHONE", "NATIONAL_ID", "PRIVATE_KEY", "OTHER_PII"] },
+              "path": { "type": "string", "minLength": 1 },
+              "redacted": { "type": "boolean" },
+              "note": { "type": "string" }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "scan_status": { "enum": ["PASSED", "FINDINGS", "REDACTED"] } }, "required": ["scan_status"] },
+          "then": { "required": ["scanned_at"] }
+        },
+        {
+          "if": { "properties": { "scan_status": { "const": "FINDINGS" } }, "required": ["scan_status"] },
+          "then": { "properties": { "findings": { "type": "array", "minItems": 1 } } }
+        },
+        {
+          "if": { "properties": { "scan_status": { "const": "REDACTED" } }, "required": ["scan_status"] },
+          "then": { "properties": { "redactions_applied": { "const": true } } }
+        }
+      ],
+      "additionalProperties": false
+    }
+  }
+}
