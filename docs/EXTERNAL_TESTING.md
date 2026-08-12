@@ -4,6 +4,9 @@ Independent evidence is the next validation gate for Context Relay. This guide
 defines a small, privacy-safe protocol that contributors can reproduce without
 sharing private conversations or repositories.
 
+Start in the [independent tester discussion](https://github.com/cgzhao111/context-relay/discussions/4)
+and publish a structured result with the [compatibility report form](https://github.com/cgzhao111/context-relay/issues/new?template=compatibility.yml).
+
 ## Safety requirements
 
 Use a synthetic fixture or a public repository. Do not submit:
