@@ -466,6 +466,15 @@ test("bootstrap pins supply chain, keeps auth interactive, and emits fail-closed
   assert.match(source, /ComputeHash\(\$stream\)/);
   assert.match(source, /dist\.integrity/);
   assert.match(source, /Installed Codex binary did not match the checksum-verified Windows platform package/);
+  assert.match(source, /\$marketplace\.marketplaceName -ne \$MarketplaceName/);
+  assert.match(source, /\[bool\]\$marketplace\.alreadyAdded/);
+  assert.doesNotMatch(source, /\$marketplace\.name/);
+  assert.match(source, /resolvedMarketplaceCommit -ne \$RepositoryCommit/);
+  assert.match(source, /unexpected plugin installation identity, version, or cache path/);
+  assert.match(source, /unexpected plugin removal identity/);
+  assert.match(source, /automatic_inventory_transition_matrix_verified = \$true/);
+  assert.match(source, /automatic_cache_content_verified = \$false/);
+  assert.doesNotMatch(source, /automatic_install_matrix_verified/);
   assert.match(source, /login --device-auth/);
   assert.doesNotMatch(source, /Start-Transcript/i);
   assert.doesNotMatch(source, /--ignore-user-config/);
