@@ -11,15 +11,22 @@ The roadmap is evidence-driven. Features move only when their authorization and 
 - Secret and PII warnings
 - Synthetic examples and automated tests
 
-## 0.2 — Evaluation and adapters
+## 0.2 — Evaluation foundation
 
-- Public evaluation set for plan-versus-implementation mistakes
-- Receiver-action accuracy benchmark
+- Published self-handoff dogfood benchmark with redacted aggregate results
+- Public fail-closed cases for stale state and sensitive-data handling
+- Compatibility ledger and external testing protocol
+- Deterministic demo asset and public-evidence privacy gate
+- Independent compatibility reports (in progress)
+
+## 0.3 — Adapters and broader evaluation
+
+- Multi-run receiver-action benchmark
 - Codex and Claude Code bootstrap adapters
-- Better public-redaction profiles
-- Compatibility reports from independent users
+- Additional public-redaction profiles
+- Compatibility reports across independent users and operating systems
 
-## 0.3 — Optional storage
+## 0.4 — Optional storage
 
 - Design an opt-in handoff store with authentication, encryption, retention, deletion, and audit logs
 - Keep raw transcripts out of the service by default

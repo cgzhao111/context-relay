@@ -1,0 +1,152 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://raw.githubusercontent.com/cgzhao111/context-relay/main/evaluation/dogfood/context-relay-self-handoff-v1/result.schema.json",
+  "title": "Context Relay aggregate dogfood result",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evaluation_id",
+    "evaluation_type",
+    "source_commit",
+    "source_completeness",
+    "host_surface",
+    "model",
+    "model_version",
+    "host_version",
+    "publication_scope",
+    "sample_size_per_condition",
+    "metric_definitions",
+    "conditions",
+    "limitations",
+    "privacy_exclusions"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "evaluation_id": { "const": "context-relay-self-handoff-v1" },
+    "evaluation_type": { "const": "self_dogfood" },
+    "source_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" },
+    "source_completeness": { "const": "VISIBLE_CONTEXT_ONLY" },
+    "host_surface": { "const": "Codex" },
+    "model": { "const": "not_exposed" },
+    "model_version": { "const": "not_exposed" },
+    "host_version": { "const": "not_exposed" },
+    "publication_scope": { "const": "privacy_preserving_aggregate" },
+    "sample_size_per_condition": { "const": 1 },
+    "metric_definitions": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "duration_ms",
+        "unsupported_verified_claims",
+        "repository_modifications",
+        "prohibited_fixture_boundary_events"
+      ],
+      "properties": {
+        "duration_ms": { "type": "string", "minLength": 1 },
+        "unsupported_verified_claims": { "type": "string", "minLength": 1 },
+        "repository_modifications": { "type": "string", "minLength": 1 },
+        "prohibited_fixture_boundary_events": { "type": "string", "minLength": 1 }
+      }
+    },
+    "conditions": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/condition" }
+    },
+    "limitations": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "privacy_exclusions": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "type": "string", "minLength": 1 }
+    }
+  },
+  "$defs": {
+    "coverageState": {
+      "enum": ["known", "not_known", "verified", "not_verifiable"]
+    },
+    "pickupCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "dogfood_phase_objective",
+        "installation_success",
+        "private_artifacts_ignored"
+      ],
+      "properties": {
+        "dogfood_phase_objective": { "$ref": "#/$defs/coverageState" },
+        "installation_success": { "$ref": "#/$defs/coverageState" },
+        "private_artifacts_ignored": { "$ref": "#/$defs/coverageState" }
+      }
+    },
+    "condition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "n",
+        "duration_ms",
+        "unsupported_verified_claims",
+        "repository_modifications",
+        "prohibited_fixture_boundary_events",
+        "pickup_coverage"
+      ],
+      "properties": {
+        "id": { "enum": ["no_handoff", "prose_summary", "context_relay"] },
+        "n": { "const": 1 },
+        "duration_ms": { "type": "integer", "minimum": 0 },
+        "unsupported_verified_claims": { "type": "integer", "minimum": 0 },
+        "repository_modifications": { "type": "integer", "minimum": 0 },
+        "prohibited_fixture_boundary_events": { "type": "integer", "minimum": 0 },
+        "pickup_coverage": { "$ref": "#/$defs/pickupCoverage" },
+        "strict_validator": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["errors", "warnings", "findings"],
+          "properties": {
+            "errors": { "type": "integer", "minimum": 0 },
+            "warnings": { "type": "integer", "minimum": 0 },
+            "findings": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "evidence_checks": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "file_digests",
+            "git_state",
+            "ci_state",
+            "release_state",
+            "installation_state",
+            "private_artifacts_ignored"
+          ],
+          "properties": {
+            "file_digests": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": ["checked", "verified"],
+              "properties": {
+                "checked": { "type": "integer", "minimum": 0 },
+                "verified": { "type": "integer", "minimum": 0 }
+              }
+            },
+            "git_state": { "const": "verified" },
+            "ci_state": { "const": "verified" },
+            "release_state": { "const": "verified" },
+            "installation_state": { "const": "verified" },
+            "private_artifacts_ignored": { "const": "verified" }
+          }
+        },
+        "handoff_lifecycle_issues_detected": { "type": "integer", "minimum": 0 },
+        "handoff_lifecycle_issue_details": { "type": "string", "minLength": 1 }
+      }
+    }
+  }
+}

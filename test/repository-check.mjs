@@ -6,12 +6,22 @@ import { fileURLToPath } from "node:url";
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 const manifest = JSON.parse(readFileSync(join(root, ".codex-plugin", "plugin.json"), "utf8"));
 const marketplace = JSON.parse(readFileSync(join(root, ".agents", "plugins", "marketplace.json"), "utf8"));
+const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
+const packageLock = JSON.parse(readFileSync(join(root, "package-lock.json"), "utf8"));
 
 assert.equal(manifest.name, "context-relay");
 assert.match(manifest.version, /^\d+\.\d+\.\d+$/);
 assert.equal(manifest.skills, "./skills/");
 assert.equal(manifest.license, "Apache-2.0");
 assert.ok(existsSync(join(root, "skills", "project-handoff", "SKILL.md")));
+assert.equal(packageJson.version, manifest.version);
+assert.equal(packageLock.version, manifest.version);
+assert.equal(packageLock.packages?.[""]?.version, manifest.version);
+assert.match(
+  readFileSync(join(root, "CHANGELOG.md"), "utf8"),
+  new RegExp(`^## ${manifest.version.replaceAll(".", "\\.")} —`, "m"),
+  "CHANGELOG.md must include the current plugin version",
+);
 
 assert.equal(marketplace.name, manifest.name);
 assert.equal(marketplace.interface?.displayName, manifest.interface?.displayName);

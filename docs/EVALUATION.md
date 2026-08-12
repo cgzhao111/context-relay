@@ -2,6 +2,14 @@
 
 Context Relay should be evaluated on factual pickup quality, not summary fluency.
 
+## Published evidence
+
+- [`evaluation/dogfood/context-relay-self-handoff-v1`](../evaluation/dogfood/context-relay-self-handoff-v1/) records one privacy-preserving self-handoff observation for each of three conditions: no handoff, prose summary, and Context Relay.
+- [`evaluation/cases`](../evaluation/cases/) provides deterministic synthetic cases for stale digests, restored deleted files, and sensitive-data blocking.
+- [`docs/COMPATIBILITY.md`](COMPATIBILITY.md) separates verified, reported, unverified, and unsupported host behavior.
+
+The dogfood comparison is `n = 1` per condition. It is evidence that the workflow ran, not a population-level quality or speed claim.
+
 ## Core invariants
 
 1. Work without direct evidence is never labeled `VERIFIED`.

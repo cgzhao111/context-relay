@@ -6,6 +6,22 @@ Context Relay is a skills-only plugin for Codex. It turns the context currently 
 
 It does **not** move an entire hidden chat transcript. It records and checks the part of the current project state supported by captured evidence.
 
+![Context Relay dogfood demo](docs/assets/context-relay-dogfood-demo.gif)
+
+## Dogfood evidence
+
+Context Relay has now handed off its own development from a long-running task to a fresh Codex task. The receiving task independently checked five file digests, Git state, CI, release state, plugin installation, and private-artifact isolation. It also found two lifecycle defects in the private handoff, which were corrected before publication.
+
+A privacy-preserving `n = 1` comparison is published for three conditions:
+
+| Condition | Current phase recovered | Installation state | Private-artifact isolation | Boundary events |
+| --- | --- | --- | --- | ---: |
+| No handoff | Not known | Not known | Not known | 1 |
+| Prose summary | Known | Not verifiable | Not verifiable | 1 |
+| Context Relay | Known | Verified | Verified | 0 |
+
+The elapsed times were similar, so this project does **not** claim a speed advantage from one run. The useful signal is verifiable pickup coverage. Read the [full redacted result](evaluation/dogfood/context-relay-self-handoff-v1/RESULTS.md), the [machine-readable result](evaluation/dogfood/context-relay-self-handoff-v1/results.json), and the [compatibility ledger](docs/COMPATIBILITY.md).
+
 ## Why
 
 Long AI coding tasks accumulate decisions, attempted fixes, local changes, tests, and unresolved boundaries. A prose summary can silently turn a plan into a completed claim or preserve a decision that a later turn superseded.
@@ -106,6 +122,7 @@ Node.js 20 or later is required for the optional local checks. There are no runt
 
 ```bash
 npm test
+npm run eval:repro
 npm run snapshot -- --root . --output workspace-snapshot.json
 npm run validate:handoff -- examples/basic/handoff.json
 npm run validate:handoff -- <path-to-handoff.json> --project-root . --check-digests --strict
@@ -123,7 +140,7 @@ handoff.json          Open, versioned machine-readable record
 workspace-snapshot.json  Optional Git and file freshness evidence
 ```
 
-See [`examples/basic`](examples/basic) for a synthetic, reproducible example and the [public protocol](skills/project-handoff/references/protocol.md) for the format and trust model.
+See [`examples/basic`](examples/basic) for a synthetic handoff, [`evaluation/cases`](evaluation/cases) for three deterministic fail-closed cases, and the [public protocol](skills/project-handoff/references/protocol.md) for the format and trust model.
 
 ## Security and privacy
 
@@ -133,9 +150,11 @@ Read [`SECURITY.md`](SECURITY.md) and [`docs/THREAT_MODEL.md`](docs/THREAT_MODEL
 
 ## Project status
 
-Version `0.1.0` is an MVP for generating, validating, and resuming local handoff packs. Cross-device storage, complete transcript ingestion, and automatic task creation are explicitly out of scope. The package is not published to npm; GitHub source and releases are the supported distribution channels for this version.
+Version `0.2.0` adds the first public dogfood benchmark, a reproducible safety-case runner, a redacted compatibility ledger, and a deterministic demo. Cross-device storage, complete transcript ingestion, and automatic task creation remain explicitly out of scope. The package is not published to npm; GitHub source and releases are the supported distribution channels for this version.
 
-The initial evaluation design is documented in [`docs/EVALUATION.md`](docs/EVALUATION.md). Published compatibility claims must name the host, version or date, plugin commit, tested workflow, and observed result.
+The evaluation design is documented in [`docs/EVALUATION.md`](docs/EVALUATION.md). Published compatibility claims must name the host, version or date, plugin commit, tested workflow, and observed result.
+
+Independent reports are the next gate. Follow the [10-minute external testing protocol](docs/EXTERNAL_TESTING.md) and submit the [compatibility report form](https://github.com/cgzhao111/context-relay/issues/new?template=compatibility.yml). Successes, partial results, and failures are all useful.
 
 ## Contributing
 
