@@ -1,6 +1,8 @@
 import assert from "node:assert/strict";
+import { createHash } from "node:crypto";
 import { spawnSync } from "node:child_process";
 import {
+  copyFileSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -38,6 +40,14 @@ function ps(file, args = []) {
     "-File", file,
     ...args,
   ], { cwd: root, encoding: "utf8" });
+}
+
+function git(args, options = {}) {
+  return spawnSync("git", args, { cwd: root, encoding: "utf8", ...options });
+}
+
+function sha256(value) {
+  return createHash("sha256").update(value).digest("hex");
 }
 
 function inventory({ context = true, budget = false, wait = false } = {}) {
@@ -84,7 +94,9 @@ test("generator emits a single hardened evidence mapping and captures an offline
   writeFileSync(inventoryPath, JSON.stringify(inventory()), "utf8");
   const configPath = join(privateRoot, "context relay.wsb");
   const baselinePath = join(privateRoot, "host-before.private.json");
-  const commit = "a".repeat(40);
+  const commitResult = git(["rev-parse", "HEAD"]);
+  assert.equal(commitResult.status, 0, commitResult.stderr);
+  const commit = commitResult.stdout.trim();
 
   const result = ps(generator, [
     "-EvidenceDirectory", evidence,
@@ -118,6 +130,114 @@ test("generator emits a single hardened evidence mapping and captures an offline
   assert.equal(captured.evidence_class, "private-host-baseline");
   assert.equal(captured.codex_cli_version, "offline-fixture");
   assert.equal(captured.inventory.target_plugins.length, 3);
+});
+
+test("generator pins hashes to LF Git blobs when the checkout files use CRLF", windowsOnly, () => {
+  const directory = fixture("sandbox-committed-byte-hashes");
+  const repository = join(directory, "repository");
+  const harness = join(repository, "tools", "windows-sandbox");
+  const evidence = join(directory, "evidence");
+  const privateRoot = join(directory, "private");
+  mkdirSync(harness, { recursive: true });
+  mkdirSync(evidence);
+  mkdirSync(privateRoot);
+
+  for (const name of [
+    "New-ContextRelaySandbox.ps1",
+    "SandboxHarness.Common.ps1",
+    "Invoke-HostBaseline.ps1",
+    "bootstrap.ps1",
+    "New-CompatibilityPartialReport.ps1",
+  ]) {
+    copyFileSync(join(harnessRoot, name), join(harness, name));
+  }
+  writeFileSync(join(repository, ".gitattributes"), "* text=auto\n", "utf8");
+
+  const runGit = (args) => spawnSync("git", args, { cwd: repository, encoding: "utf8" });
+  for (const args of [
+    ["init", "--quiet"],
+    ["config", "user.name", "Sandbox Harness Test"],
+    ["config", "user.email", "sandbox-harness@example.invalid"],
+    ["add", "."],
+    ["commit", "--quiet", "-m", "LF harness fixture"],
+  ]) {
+    const result = runGit(args);
+    assert.equal(result.status, 0, result.stderr);
+  }
+  const commitResult = runGit(["rev-parse", "HEAD"]);
+  assert.equal(commitResult.status, 0, commitResult.stderr);
+  const commit = commitResult.stdout.trim();
+
+  const pinnedPaths = ["bootstrap.ps1", "New-CompatibilityPartialReport.ps1"];
+  const expected = {};
+  const working = {};
+  for (const name of pinnedPaths) {
+    const relativePath = `tools/windows-sandbox/${name}`;
+    const blob = spawnSync("git", ["show", `${commit}:${relativePath}`], { cwd: repository, encoding: null });
+    assert.equal(blob.status, 0, blob.stderr.toString());
+    expected[name] = sha256(blob.stdout);
+    const crlf = readFileSync(join(harness, name), "utf8").replace(/\r?\n/g, "\r\n");
+    writeFileSync(join(harness, name), crlf, "utf8");
+    working[name] = sha256(readFileSync(join(harness, name)));
+    assert.notEqual(working[name], expected[name]);
+  }
+
+  const inventoryPath = join(directory, "inventory.json");
+  writeFileSync(inventoryPath, JSON.stringify(inventory()), "utf8");
+  const configPath = join(privateRoot, "run.wsb");
+  const baselinePath = join(privateRoot, "host-before.private.json");
+  const generated = ps(join(harness, "New-ContextRelaySandbox.ps1"), [
+    "-EvidenceDirectory", evidence,
+    "-ConfigPath", configPath,
+    "-HostBaselinePath", baselinePath,
+    "-HostInventoryJsonPath", inventoryPath,
+    "-HarnessCommit", commit,
+    "-SkipWindowsSandboxCheck",
+  ]);
+  assert.equal(generated.status, 0, generated.stderr);
+
+  const xml = readFileSync(configPath, "utf8");
+  const encoded = xml.match(/-EncodedCommand ([A-Za-z0-9+/=]+)<\/Command>/)?.[1];
+  assert.ok(encoded);
+  const launcher = Buffer.from(encoded, "base64").toString("utf16le");
+  assert.match(launcher, new RegExp(`actualHash -ne '${expected["bootstrap.ps1"]}'`));
+  assert.match(launcher, new RegExp(`PartialReportHelperSha256 '${expected["New-CompatibilityPartialReport.ps1"]}'`));
+  assert.equal(launcher.includes(working["bootstrap.ps1"]), false);
+  assert.equal(launcher.includes(working["New-CompatibilityPartialReport.ps1"]), false);
+});
+
+test("generator rejects a tree or missing HarnessCommit before creating host artifacts", windowsOnly, () => {
+  const directory = fixture("sandbox-invalid-harness-commit");
+  const evidence = join(directory, "evidence");
+  const privateRoot = join(directory, "private");
+  mkdirSync(evidence);
+  mkdirSync(privateRoot);
+  const inventoryPath = join(directory, "inventory.json");
+  writeFileSync(inventoryPath, JSON.stringify(inventory()), "utf8");
+
+  const treeResult = git(["rev-parse", "HEAD^{tree}"]);
+  assert.equal(treeResult.status, 0, treeResult.stderr);
+  const cases = [
+    { name: "tree", commit: treeResult.stdout.trim(), message: /must identify a Git commit; found 'tree'/ },
+    { name: "missing", commit: "0".repeat(40), message: /is not a locally available Git object/ },
+  ];
+
+  for (const current of cases) {
+    const configPath = join(privateRoot, `${current.name}.wsb`);
+    const baselinePath = join(privateRoot, `${current.name}-baseline.json`);
+    const result = ps(generator, [
+      "-EvidenceDirectory", evidence,
+      "-ConfigPath", configPath,
+      "-HostBaselinePath", baselinePath,
+      "-HostInventoryJsonPath", inventoryPath,
+      "-HarnessCommit", current.commit,
+      "-SkipWindowsSandboxCheck",
+    ]);
+    assert.notEqual(result.status, 0);
+    assert.match(result.stderr, current.message);
+    assert.equal(existsSync(configPath), false);
+    assert.equal(existsSync(baselinePath), false);
+  }
 });
 
 test("generator fails closed for non-empty, repository, and .codex evidence paths", windowsOnly, () => {
