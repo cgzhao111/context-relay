@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://raw.githubusercontent.com/cgzhao111/context-relay/main/skills/project-handoff/references/handoff.schema.json",
+  "$id": "https://raw.githubusercontent.com/cgzhao111/context-relay/main/plugins/context-relay/skills/project-handoff/references/handoff.schema.json",
   "title": "Context Relay project handoff",
   "description": "Portable, evidence-backed project state passed from one coding-agent task to another.",
   "type": "object",

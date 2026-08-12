@@ -146,6 +146,17 @@ test("executable evaluation harness canaries are excluded while their artifacts 
   assert.deepEqual(result.findings, []);
 });
 
+test("plugin scripts are excluded while plugin examples and documentation are scanned", () => {
+  const root = fixture();
+  write(root, "plugins/beta/skills/example/scripts/run.mjs", "const matcher = /\\/home\\/synthetic/;\n");
+  write(root, "plugins/beta/examples/result.json", JSON.stringify({ status: "synthetic" }));
+  write(root, "plugins/beta/skills/example/SKILL.md", "---\nname: example\ndescription: Synthetic skill.\n---\n");
+
+  const result = scanPublicEvidence({ repositoryRoot: root });
+  assert.equal(result.filesScanned, 2);
+  assert.deepEqual(result.findings, []);
+});
+
 test("binary public assets are not decoded as text but sensitive filenames remain blocked", () => {
   const root = fixture();
   const binaryPath = join(root, "docs", "assets", "demo.gif");

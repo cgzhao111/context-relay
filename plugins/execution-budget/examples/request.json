@@ -1,0 +1,39 @@
+{
+  "schema_version": "1.0",
+  "task": {
+    "task_type": "multi_file_change"
+  },
+  "signals": {
+    "expected_files": 6,
+    "expected_tests": 4,
+    "ambiguity": "medium",
+    "rollback_difficulty": "low",
+    "production_impact": false,
+    "external_writes": false,
+    "destructive": false,
+    "credentials": false,
+    "personal_data": false
+  },
+  "preferences": {
+    "mode": "auto",
+    "token_limit": 50000,
+    "time_limit_minutes": 30,
+    "force_card": true
+  },
+  "runtime": {
+    "host_family": "codex",
+    "host_version_bucket": "0.144",
+    "model_tier": "frontier",
+    "reasoning_effort": "high",
+    "parallelism": "single"
+  },
+  "authorization": {
+    "authorized_actions": [
+      "READ_SCOPE",
+      "REVERSIBLE_EDIT",
+      "LOCAL_TEST",
+      "REPAIR_IN_SCOPE_TEST_FAILURE"
+    ]
+  },
+  "usage_observability": "NONE"
+}

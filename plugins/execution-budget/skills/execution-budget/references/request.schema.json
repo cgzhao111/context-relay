@@ -1,0 +1,151 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cgzhao111/context-relay/blob/main/plugins/execution-budget/skills/execution-budget/references/request.schema.json",
+  "title": "Execution Budget Request",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "task", "signals", "preferences", "runtime",
+    "authorization", "usage_observability"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "task": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["task_type"],
+      "properties": {
+        "task_type": {
+          "enum": [
+            "status_query", "research", "single_file_change", "multi_file_change",
+            "debugging", "architecture", "release", "migration", "other"
+          ]
+        }
+      }
+    },
+    "signals": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "expected_files", "expected_tests", "ambiguity", "rollback_difficulty",
+        "production_impact", "external_writes", "destructive", "credentials", "personal_data"
+      ],
+      "properties": {
+        "expected_files": { "type": "integer", "minimum": 0, "maximum": 100000 },
+        "expected_tests": { "type": "integer", "minimum": 0, "maximum": 100000 },
+        "ambiguity": { "enum": ["low", "medium", "high"] },
+        "rollback_difficulty": { "enum": ["low", "medium", "high"] },
+        "production_impact": { "type": "boolean" },
+        "external_writes": { "type": "boolean" },
+        "destructive": { "type": "boolean" },
+        "credentials": { "type": "boolean" },
+        "personal_data": { "type": "boolean" }
+      }
+    },
+    "preferences": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "token_limit", "time_limit_minutes", "force_card"],
+      "properties": {
+        "mode": { "enum": ["auto", "quick", "standard", "deep"] },
+        "token_limit": {
+          "anyOf": [
+            { "type": "number", "exclusiveMinimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "time_limit_minutes": {
+          "anyOf": [
+            { "type": "number", "exclusiveMinimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "force_card": { "type": "boolean" }
+      }
+    },
+    "runtime": { "$ref": "#/$defs/runtime" },
+    "authorization": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["authorized_actions"],
+      "properties": {
+        "authorized_actions": {
+          "type": "array",
+          "uniqueItems": true,
+          "items": {
+            "enum": [
+              "READ_SCOPE", "REVERSIBLE_EDIT", "LOCAL_TEST",
+              "REPAIR_IN_SCOPE_TEST_FAILURE"
+            ]
+          }
+        }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "authorized_actions": {
+                "type": "array",
+                "contains": {
+                  "enum": [
+                    "REVERSIBLE_EDIT", "LOCAL_TEST", "REPAIR_IN_SCOPE_TEST_FAILURE"
+                  ]
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "authorized_actions": {
+                "type": "array",
+                "contains": { "const": "READ_SCOPE" }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "authorized_actions": {
+                "type": "array",
+                "contains": { "const": "REPAIR_IN_SCOPE_TEST_FAILURE" }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "authorized_actions": {
+                "type": "array",
+                "allOf": [
+                  { "contains": { "const": "REVERSIBLE_EDIT" } },
+                  { "contains": { "const": "LOCAL_TEST" } }
+                ]
+              }
+            }
+          }
+        }
+      ]
+    },
+    "usage_observability": { "enum": ["NONE", "POST_RUN", "LIVE_HOST_TELEMETRY"] }
+  },
+  "$defs": {
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "host_family", "host_version_bucket", "model_tier",
+        "reasoning_effort", "parallelism"
+      ],
+      "properties": {
+        "host_family": { "enum": ["generic", "codex"] },
+        "host_version_bucket": {
+          "type": "string",
+          "pattern": "^(?:unknown|[0-9]+(?:\\.[0-9]+){0,2})$"
+        },
+        "model_tier": { "enum": ["unknown", "balanced", "frontier"] },
+        "reasoning_effort": { "enum": ["unknown", "low", "medium", "high", "max", "ultra"] },
+        "parallelism": { "enum": ["single", "multi"] }
+      }
+    }
+  }
+}

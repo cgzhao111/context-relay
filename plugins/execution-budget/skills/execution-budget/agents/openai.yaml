@@ -1,0 +1,6 @@
+interface:
+  display_name: "Execution Budget"
+  short_description: "Estimate task ranges and set useful pause boundaries"
+  default_prompt: "Use $execution-budget to preview an execution budget for this task."
+policy:
+  allow_implicit_invocation: false

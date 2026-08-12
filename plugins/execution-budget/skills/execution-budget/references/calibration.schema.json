@@ -1,0 +1,145 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cgzhao111/context-relay/blob/main/plugins/execution-budget/skills/execution-budget/references/calibration.schema.json",
+  "title": "Execution Budget Calibration",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "generator_version", "provenance_trust", "generated_at",
+    "minimum_usable_samples", "eligible_records", "excluded_records",
+    "exclusions", "buckets", "privacy"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "generator_version": { "const": "0.1.0" },
+    "provenance_trust": { "const": "CALLER_ATTESTED" },
+    "generated_at": { "type": "string", "format": "date-time" },
+    "minimum_usable_samples": { "const": 5 },
+    "eligible_records": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "excluded_records": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "exclusions": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "invalid_shape": { "$ref": "#/$defs/positiveCount" },
+        "unknown_or_private_field": { "$ref": "#/$defs/positiveCount" },
+        "missing_field": { "$ref": "#/$defs/positiveCount" },
+        "unsupported_schema": { "$ref": "#/$defs/positiveCount" },
+        "unsupported_category": { "$ref": "#/$defs/positiveCount" },
+        "invalid_runtime": { "$ref": "#/$defs/positiveCount" },
+        "synthetic_example": { "$ref": "#/$defs/positiveCount" },
+        "unverified_usage_source": { "$ref": "#/$defs/positiveCount" },
+        "invalid_tokens": { "$ref": "#/$defs/positiveCount" },
+        "invalid_duration": { "$ref": "#/$defs/positiveCount" },
+        "invalid_observed_at": { "$ref": "#/$defs/positiveCount" },
+        "invalid_outcome": { "$ref": "#/$defs/positiveCount" },
+        "duplicate_record": { "$ref": "#/$defs/positiveCount" }
+      }
+    },
+    "buckets": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "key", "runtime", "task_type", "size_bucket", "mode", "samples",
+          "usable", "confidence", "token_percentiles", "duration_percentiles", "outcomes"
+        ],
+        "properties": {
+          "key": { "type": "string", "minLength": 1 },
+          "runtime": { "$ref": "#/$defs/runtime" },
+          "task_type": {
+            "enum": [
+              "status_query", "research", "single_file_change", "multi_file_change",
+              "debugging", "architecture", "release", "migration", "other"
+            ]
+          },
+          "size_bucket": { "enum": ["small", "medium", "large"] },
+          "mode": { "enum": ["quick", "standard", "deep"] },
+          "samples": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+          "usable": { "type": "boolean" },
+          "confidence": { "enum": ["insufficient", "low"] },
+          "token_percentiles": { "$ref": "#/$defs/tokenPercentiles" },
+          "duration_percentiles": { "$ref": "#/$defs/percentiles" },
+          "outcomes": { "$ref": "#/$defs/outcomes" }
+        }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["stores_raw_prompts", "stores_transcripts", "stores_source_files", "note"],
+      "properties": {
+        "stores_raw_prompts": { "const": false },
+        "stores_transcripts": { "const": false },
+        "stores_source_files": { "const": false },
+        "note": {
+          "const": "Only aggregate run metadata and separate outcome flags belong in this file."
+        }
+      }
+    }
+  },
+  "$defs": {
+    "positiveCount": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "host_family", "host_version_bucket", "model_tier",
+        "reasoning_effort", "parallelism"
+      ],
+      "properties": {
+        "host_family": { "enum": ["generic", "codex"] },
+        "host_version_bucket": {
+          "type": "string",
+          "pattern": "^(?:unknown|[0-9]+(?:\\.[0-9]+){0,2})$"
+        },
+        "model_tier": { "enum": ["unknown", "balanced", "frontier"] },
+        "reasoning_effort": { "enum": ["unknown", "low", "medium", "high", "max", "ultra"] },
+        "parallelism": { "enum": ["single", "multi"] }
+      }
+    },
+    "percentiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["p20", "p50", "p80", "p90"],
+      "properties": {
+        "p20": { "type": "number", "exclusiveMinimum": 0 },
+        "p50": { "type": "number", "exclusiveMinimum": 0 },
+        "p80": { "type": "number", "exclusiveMinimum": 0 },
+        "p90": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "tokenPercentiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["p20", "p50", "p80", "p90"],
+      "properties": {
+        "p20": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "p50": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "p80": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "p90": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 }
+      }
+    },
+    "outcomes": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "success_count", "quality_passed_count", "rework_required_count",
+        "success_rate", "quality_pass_rate", "rework_rate"
+      ],
+      "properties": {
+        "success_count": { "type": "integer", "minimum": 0 },
+        "quality_passed_count": { "type": "integer", "minimum": 0 },
+        "rework_required_count": { "type": "integer", "minimum": 0 },
+        "success_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "quality_pass_rate": { "type": "number", "minimum": 0, "maximum": 1 },
+        "rework_rate": { "type": "number", "minimum": 0, "maximum": 1 }
+      }
+    }
+  }
+}

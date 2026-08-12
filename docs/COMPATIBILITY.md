@@ -10,6 +10,7 @@ or repository layout.
 | --- | --- | --- | --- | --- | --- | --- |
 | Self-handoff dogfood v1 | `d5cd032e9b3db82f29a194d687f2608d3cc2e419` | `VISIBLE_CONTEXT_ONLY` | Codex host; version `not_exposed` | `not_exposed` | Pickup coverage, strict validation, five file digests, Git, CI, release, installation, and ignored private artifacts | Passed for the single published observation |
 | Marketplace install v0.2.0 | `v0.2.0` / `d97f96be47e14d46c4012e5d9ae1924df686d580` | Not applicable | Codex CLI `0.144.5` on Windows, tested 2026-08-12 | Not applicable | Git marketplace refresh, plugin install, installed version check, official plugin validation, and official skill validation | Passed |
+| Three-plugin selection pre-release | Local release candidate on 2026-08-12; not a public revision | Not applicable | Static repository and release-bundle gates | Not applicable | Separate `plugins/context-relay`, `plugins/execution-budget`, and `plugins/async-wait-guard` source roots, Marketplace identities, manifests, Skill catalogs, exact entries, release inventory | Passed structurally; real Codex CLI cache/install/upgrade/removal and fresh-task visibility or triggering remain publication blockers |
 
 The detailed aggregate result is in
 [`evaluation/dogfood/context-relay-self-handoff-v1/`](../evaluation/dogfood/context-relay-self-handoff-v1/).
@@ -41,6 +42,15 @@ The following remain unverified by the published dogfood result:
 - non-Codex receiving agents;
 - automatic access to hidden or unavailable conversation history;
 - replay from the private source material used in the self-test.
+- Execution Budget runtime triggering and estimate presentation in a fresh
+  desktop task; only static marketplace and release-package isolation has been
+  tested.
+- Async Wait Guard installation, implicit triggering, wait behavior in a fresh
+  task, and independence after removing either optional plugin; structural and
+  deterministic local checks do not establish host runtime behavior.
+- Token or elapsed-time savings from Async Wait Guard. The motivating X post
+  reports an individual observation, not a general compatibility or performance
+  result for this repository.
 
 Context Relay is designed to state these limitations rather than infer missing
 compatibility.

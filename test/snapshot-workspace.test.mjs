@@ -5,7 +5,7 @@ import { mkdtempSync, symlinkSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 
-import { createSnapshot } from "../skills/project-handoff/scripts/snapshot-workspace.mjs";
+import { createSnapshot } from "../plugins/context-relay/skills/project-handoff/scripts/snapshot-workspace.mjs";
 
 function git(root, ...args) {
   return execFileSync("git", ["-C", root, ...args], { encoding: "utf8" }).trim();

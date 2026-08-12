@@ -1,0 +1,39 @@
+{
+  "name": "execution-budget",
+  "version": "0.1.0",
+  "description": "Preview task effort, authorization boundaries, and calibrated token ranges before an AI coding run.",
+  "author": {
+    "name": "cgzhao111",
+    "url": "https://github.com/cgzhao111"
+  },
+  "homepage": "https://github.com/cgzhao111/context-relay",
+  "repository": "https://github.com/cgzhao111/context-relay",
+  "license": "Apache-2.0",
+  "keywords": [
+    "codex",
+    "budget",
+    "tokens",
+    "approvals",
+    "productivity"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Execution Budget (Beta)",
+    "shortDescription": "Plan task budgets and meaningful approval boundaries",
+    "longDescription": "Turn a coding request into a compact execution quote: heuristic or calibrated token ranges, time ranges, quick/standard/deep options, actions that may proceed autonomously, and the conditions that must pause for the user. It never claims exact whole-task usage and does not switch models automatically.",
+    "developerName": "cgzhao111",
+    "category": "Productivity",
+    "capabilities": [
+      "Execution budget previews",
+      "Risk-based pause boundaries",
+      "Outcome-aware calibration"
+    ],
+    "websiteURL": "https://github.com/cgzhao111/context-relay",
+    "defaultPrompt": [
+      "Estimate an execution budget and approval boundary for this task.",
+      "Compare quick, standard, and deep execution plans before starting.",
+      "Calibrate future task estimates from these outcome-labeled, caller-attested run records."
+    ],
+    "brandColor": "#7C3AED"
+  }
+}

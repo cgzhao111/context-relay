@@ -8,7 +8,7 @@ import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 import { pathToFileURL } from "node:url";
 
-import { validateHandoff } from "../skills/project-handoff/scripts/validate-handoff.mjs";
+import { validateHandoff } from "../plugins/context-relay/skills/project-handoff/scripts/validate-handoff.mjs";
 
 const NOW = "2026-08-12T20:00:00.000Z";
 

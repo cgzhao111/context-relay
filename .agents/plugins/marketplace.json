@@ -8,7 +8,31 @@
       "name": "context-relay",
       "source": {
         "source": "local",
-        "path": "./"
+        "path": "./plugins/context-relay"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "execution-budget",
+      "source": {
+        "source": "local",
+        "path": "./plugins/execution-budget"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "async-wait-guard",
+      "source": {
+        "source": "local",
+        "path": "./plugins/async-wait-guard"
       },
       "policy": {
         "installation": "AVAILABLE",

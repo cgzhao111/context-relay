@@ -1,0 +1,6 @@
+interface:
+  display_name: "Async Wait Guard"
+  short_description: "Avoid wasteful polling of long-running tools"
+  default_prompt: "Use $async-wait-guard to plan or audit efficient waits for long-running asynchronous tools."
+policy:
+  allow_implicit_invocation: true
