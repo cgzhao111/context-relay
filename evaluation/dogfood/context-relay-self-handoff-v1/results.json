@@ -1,0 +1,100 @@
+{
+  "schema_version": "1.0.0",
+  "evaluation_id": "context-relay-self-handoff-v1",
+  "evaluation_type": "self_dogfood",
+  "source_commit": "d5cd032e9b3db82f29a194d687f2608d3cc2e419",
+  "source_completeness": "VISIBLE_CONTEXT_ONLY",
+  "host_surface": "Codex",
+  "model": "not_exposed",
+  "model_version": "not_exposed",
+  "host_version": "not_exposed",
+  "publication_scope": "privacy_preserving_aggregate",
+  "sample_size_per_condition": 1,
+  "metric_definitions": {
+    "duration_ms": "Recorded elapsed duration for the condition; timing instrumentation and boundaries are not included in this public aggregate.",
+    "unsupported_verified_claims": "Claims labeled VERIFIED without direct supporting evidence.",
+    "repository_modifications": "Repository modifications made during pickup.",
+    "prohibited_fixture_boundary_events": "Instances where an evaluation-excluded fixture was inspected by a lower-level scanner; raw fixture values are not published."
+  },
+  "conditions": [
+    {
+      "id": "no_handoff",
+      "n": 1,
+      "duration_ms": 367963,
+      "unsupported_verified_claims": 0,
+      "repository_modifications": 0,
+      "prohibited_fixture_boundary_events": 1,
+      "pickup_coverage": {
+        "dogfood_phase_objective": "not_known",
+        "installation_success": "not_known",
+        "private_artifacts_ignored": "not_known"
+      }
+    },
+    {
+      "id": "prose_summary",
+      "n": 1,
+      "duration_ms": 397427,
+      "unsupported_verified_claims": 0,
+      "repository_modifications": 0,
+      "prohibited_fixture_boundary_events": 1,
+      "pickup_coverage": {
+        "dogfood_phase_objective": "known",
+        "installation_success": "not_verifiable",
+        "private_artifacts_ignored": "not_verifiable"
+      }
+    },
+    {
+      "id": "context_relay",
+      "n": 1,
+      "duration_ms": 367826,
+      "unsupported_verified_claims": 0,
+      "repository_modifications": 0,
+      "prohibited_fixture_boundary_events": 0,
+      "pickup_coverage": {
+        "dogfood_phase_objective": "known",
+        "installation_success": "verified",
+        "private_artifacts_ignored": "verified"
+      },
+      "strict_validator": {
+        "errors": 0,
+        "warnings": 0,
+        "findings": 0
+      },
+      "evidence_checks": {
+        "file_digests": {
+          "checked": 5,
+          "verified": 5
+        },
+        "git_state": "verified",
+        "ci_state": "verified",
+        "release_state": "verified",
+        "installation_state": "verified",
+        "private_artifacts_ignored": "verified"
+      },
+      "handoff_lifecycle_issues_detected": 2,
+      "handoff_lifecycle_issue_details": "not_published_due_to_source_privacy"
+    }
+  ],
+  "limitations": [
+    "one_observation_per_condition",
+    "self_evaluation",
+    "visible_context_only",
+    "private_source_material_not_published",
+    "model_not_exposed",
+    "model_version_not_exposed",
+    "host_version_not_exposed",
+    "timing_protocol_not_published",
+    "no_randomization",
+    "no_confidence_interval",
+    "no_general_advantage_claim"
+  ],
+  "privacy_exclusions": [
+    "task_or_conversation_identifiers",
+    "absolute_filesystem_paths",
+    "original_conversation_text",
+    "organization_or_internal_project_names",
+    "user_email_addresses",
+    "raw_private_artifacts",
+    "raw_prohibited_fixture_values"
+  ]
+}

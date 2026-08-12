@@ -7,3 +7,4 @@ Thumbs.db
 *.local.json
 handoff.private.json
 PROJECT_HANDOFF.private.md
+.context-relay-public-evidence-denylist
