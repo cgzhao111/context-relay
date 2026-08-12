@@ -154,7 +154,7 @@ Version `0.2.0` adds the first public dogfood benchmark, a reproducible safety-c
 
 The evaluation design is documented in [`docs/EVALUATION.md`](docs/EVALUATION.md). Published compatibility claims must name the host, version or date, plugin commit, tested workflow, and observed result.
 
-Independent reports are the next gate. Follow the [10-minute external testing protocol](docs/EXTERNAL_TESTING.md) and submit the [compatibility report form](https://github.com/cgzhao111/context-relay/issues/new?template=compatibility.yml). Successes, partial results, and failures are all useful.
+Independent reports are the next gate. Follow the [10-minute external testing protocol](docs/EXTERNAL_TESTING.md), join the [tester discussion](https://github.com/cgzhao111/context-relay/discussions/4), and submit the [compatibility report form](https://github.com/cgzhao111/context-relay/issues/new?template=compatibility.yml). Successes, partial results, and failures are all useful.
 
 ## Contributing
 
