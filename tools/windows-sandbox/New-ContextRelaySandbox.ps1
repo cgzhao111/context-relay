@@ -157,7 +157,23 @@ $launcher = @"
 `$bootstrapRoot = 'C:\SandboxBootstrap'
 New-Item -ItemType Directory -Force -Path `$bootstrapRoot | Out-Null
 `$bootstrapPath = Join-Path `$bootstrapRoot 'bootstrap.ps1'
-Invoke-WebRequest -UseBasicParsing -Uri '$BootstrapUri' -OutFile `$bootstrapPath
+for (`$attempt = 1; `$attempt -le 4; `$attempt++) {
+    if (Test-Path -LiteralPath `$bootstrapPath) { Remove-Item -LiteralPath `$bootstrapPath -Force }
+    try {
+        Invoke-WebRequest -UseBasicParsing -Uri '$BootstrapUri' -OutFile `$bootstrapPath
+        if ((Get-Item -LiteralPath `$bootstrapPath -ErrorAction Stop).Length -le 0) { throw 'Bootstrap download was empty.' }
+        break
+    }
+    catch {
+        if (Test-Path -LiteralPath `$bootstrapPath) { Remove-Item -LiteralPath `$bootstrapPath -Force }
+        if (`$attempt -eq 4) { throw 'Bootstrap download failed after four attempts.' }
+        if (`$attempt -eq 1) {
+            [System.Net.ServicePointManager]::SecurityProtocol =
+                [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
+        }
+        Start-Sleep -Seconds ([Math]::Min(8, [Math]::Pow(2, `$attempt)))
+    }
+}
 `$actualHash = (Get-FileHash -LiteralPath `$bootstrapPath -Algorithm SHA256).Hash.ToLowerInvariant()
 if (`$actualHash -ne '$bootstrapSha256') { throw 'Downloaded bootstrap did not match the host-pinned SHA256.' }
 & `$bootstrapPath -EvidenceDirectory 'C:\EvidenceOut' -HarnessCommit '$HarnessCommit' -PartialReportHelperSha256 '$partialReportHelperSha256'
