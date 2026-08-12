@@ -18,6 +18,7 @@
     "test": "node --test",
     "check": "node --test && node test/repository-check.mjs && npm run check:public-evidence",
     "check:public-evidence": "node evaluation/scripts/check-public-evidence.mjs",
+    "evidence:validate": "node evaluation/compatibility/validate-report.mjs",
     "eval:repro": "node evaluation/run-repro-cases.mjs",
     "demo:render": "node tools/render-dogfood-demo.mjs",
     "snapshot": "node plugins/context-relay/skills/project-handoff/scripts/snapshot-workspace.mjs",

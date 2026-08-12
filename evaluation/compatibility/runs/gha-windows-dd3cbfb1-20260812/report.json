@@ -1,0 +1,190 @@
+{
+  "schema_version": "1.0.0",
+  "report_id": "gha-plugin-install-matrix",
+  "tested_at": "2026-08-12T15:26:24.2667523+00:00",
+  "reporter_kind": "automation",
+  "plugin": {
+    "id": "bundle",
+    "version": "0.3.0-rc.2",
+    "repository_commit": "dd3cbfb1f10c29808193dee167f4d595e7046f38"
+  },
+  "host": {
+    "surface": "github-actions-windows",
+    "version": "codex-cli 0.144.5",
+    "os": "Windows",
+    "os_version": "GitHub runner image 20260803.193.1",
+    "architecture": "x64"
+  },
+  "model": {
+    "name": "not-applicable",
+    "version": "not-applicable",
+    "reasoning_effort": "not-applicable"
+  },
+  "installation": {
+    "method": "marketplace",
+    "fresh_context": true,
+    "commands_or_actions": [
+      "Add the public marketplace at the pinned repository commit.",
+      "Install each plugin independently, then install all three together.",
+      "Remove each plugin and verify list and cache state after every transition."
+    ],
+    "status": "success"
+  },
+  "input": {
+    "kind": "public-repository",
+    "fixture_ref": "matrix-details.json",
+    "source_completeness": "NOT_APPLICABLE"
+  },
+  "workflow": "marketplace-install-matrix",
+  "trigger": {
+    "mode": "not-applicable",
+    "status": "not-applicable"
+  },
+  "steps": [
+    {
+      "id": "initial-none-installed",
+      "action": "Verify plugin list and default cache at matrix state 'initial-none-installed'.",
+      "expected": "Installed plugins and cache entries exactly match the state contract for 'initial-none-installed'.",
+      "observed": "Marketplace inventory, installed set, enabled set, and cache set matched exactly.",
+      "status": "pass",
+      "evidence_ref": "matrix-details.json"
+    },
+    {
+      "id": "single-context-relay-installed",
+      "action": "Verify plugin list and default cache at matrix state 'single-context-relay-installed'.",
+      "expected": "Installed plugins and cache entries exactly match the state contract for 'single-context-relay-installed'.",
+      "observed": "Marketplace inventory, installed set, enabled set, and cache set matched exactly.",
+      "status": "pass",
+      "evidence_ref": "matrix-details.json"
+    },
+    {
+      "id": "single-context-relay-removed",
+      "action": "Verify plugin list and default cache at matrix state 'single-context-relay-removed'.",
+      "expected": "Installed plugins and cache entries exactly match the state contract for 'single-context-relay-removed'.",
+      "observed": "Marketplace inventory, installed set, enabled set, and cache set matched exactly.",
+      "status": "pass",
+      "evidence_ref": "matrix-details.json"
+    },
+    {
+      "id": "single-execution-budget-installed",
+      "action": "Verify plugin list and default cache at matrix state 'single-execution-budget-installed'.",
+      "expected": "Installed plugins and cache entries exactly match the state contract for 'single-execution-budget-installed'.",
+      "observed": "Marketplace inventory, installed set, enabled set, and cache set matched exactly.",
+      "status": "pass",
+      "evidence_ref": "matrix-details.json"
+    },
+    {
+      "id": "single-execution-budget-removed",
+      "action": "Verify plugin list and default cache at matrix state 'single-execution-budget-removed'.",
+      "expected": "Installed plugins and cache entries exactly match the state contract for 'single-execution-budget-removed'.",
+      "observed": "Marketplace inventory, installed set, enabled set, and cache set matched exactly.",
+      "status": "pass",
+      "evidence_ref": "matrix-details.json"
+    },
+    {
+      "id": "single-async-wait-guard-installed",
+      "action": "Verify plugin list and default cache at matrix state 'single-async-wait-guard-installed'.",
+      "expected": "Installed plugins and cache entries exactly match the state contract for 'single-async-wait-guard-installed'.",
+      "observed": "Marketplace inventory, installed set, enabled set, and cache set matched exactly.",
+      "status": "pass",
+      "evidence_ref": "matrix-details.json"
+    },
+    {
+      "id": "single-async-wait-guard-removed",
+      "action": "Verify plugin list and default cache at matrix state 'single-async-wait-guard-removed'.",
+      "expected": "Installed plugins and cache entries exactly match the state contract for 'single-async-wait-guard-removed'.",
+      "observed": "Marketplace inventory, installed set, enabled set, and cache set matched exactly.",
+      "status": "pass",
+      "evidence_ref": "matrix-details.json"
+    },
+    {
+      "id": "all-three-installed",
+      "action": "Verify plugin list and default cache at matrix state 'all-three-installed'.",
+      "expected": "Installed plugins and cache entries exactly match the state contract for 'all-three-installed'.",
+      "observed": "Marketplace inventory, installed set, enabled set, and cache set matched exactly.",
+      "status": "pass",
+      "evidence_ref": "matrix-details.json"
+    },
+    {
+      "id": "removed-async-wait-guard-independently",
+      "action": "Verify plugin list and default cache at matrix state 'removed-async-wait-guard-independently'.",
+      "expected": "Installed plugins and cache entries exactly match the state contract for 'removed-async-wait-guard-independently'.",
+      "observed": "Marketplace inventory, installed set, enabled set, and cache set matched exactly.",
+      "status": "pass",
+      "evidence_ref": "matrix-details.json"
+    },
+    {
+      "id": "removed-execution-budget-independently",
+      "action": "Verify plugin list and default cache at matrix state 'removed-execution-budget-independently'.",
+      "expected": "Installed plugins and cache entries exactly match the state contract for 'removed-execution-budget-independently'.",
+      "observed": "Marketplace inventory, installed set, enabled set, and cache set matched exactly.",
+      "status": "pass",
+      "evidence_ref": "matrix-details.json"
+    },
+    {
+      "id": "removed-context-relay-independently",
+      "action": "Verify plugin list and default cache at matrix state 'removed-context-relay-independently'.",
+      "expected": "Installed plugins and cache entries exactly match the state contract for 'removed-context-relay-independently'.",
+      "observed": "Marketplace inventory, installed set, enabled set, and cache set matched exactly.",
+      "status": "pass",
+      "evidence_ref": "matrix-details.json"
+    }
+  ],
+  "checks": [
+    {
+      "name": "source_commit",
+      "status": "pass",
+      "value": true
+    },
+    {
+      "name": "list_state",
+      "status": "pass",
+      "value": true
+    },
+    {
+      "name": "cache_state",
+      "status": "pass",
+      "value": true
+    },
+    {
+      "name": "independent_removal",
+      "status": "pass",
+      "value": true
+    },
+    {
+      "name": "public_evidence_scan",
+      "status": "pass",
+      "value": true
+    }
+  ],
+  "result": "success",
+  "failures": [],
+  "unverified_boundaries": [
+    "This report verifies marketplace installation, list state, cache state, and removal only.",
+    "Skill visibility, model triggering, and host wait behavior require separate fresh-task runtime evidence."
+  ],
+  "privacy": {
+    "public_evidence_scan": "pass",
+    "redactions": [
+      "Host paths and raw command output are excluded from public evidence."
+    ],
+    "raw_private_artifacts_excluded": true
+  },
+  "evidence": [
+    {
+      "path": "matrix-details.json",
+      "sha256": "0da78c9087ca35f0b59b240395bda00124eae35484e3c486de90e27d170579ca",
+      "media_type": "application/json"
+    },
+    {
+      "path": "matrix-events.jsonl",
+      "sha256": "cab965e2b9ca05bb85110b2a413f6e7786e8415ea42a46b917d3f3072d82bb09",
+      "media_type": "application/jsonl"
+    },
+    {
+      "path": "privacy-scan.txt",
+      "sha256": "ec896bd2cfa50541d6ac1c5632316bbbc8c2b40e250978feb29b9c25c2b2350e",
+      "media_type": "text/plain"
+    }
+  ]
+}

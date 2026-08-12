@@ -10,11 +10,14 @@ summary fluency.
   or private data.
 - [`scripts/check-public-evidence.mjs`](scripts/check-public-evidence.mjs)
   prevents known private-data classes from entering public evidence files.
+- [`compatibility`](compatibility/) defines the strict runtime-report contract,
+  validator, and publication boundary for installation and fresh-task evidence.
 
 Run the public cases and full repository gate:
 
 ```bash
 npm run eval:repro
+npm run evidence:validate -- evaluation/compatibility/example-contract-report.json
 npm run check
 ```
 

@@ -1,0 +1,225 @@
+name: plugin-isolation
+
+on:
+  pull_request:
+    paths:
+      - .github/workflows/plugin-isolation.yml
+      - tools/run-plugin-install-matrix.ps1
+      - test/plugin-install-matrix.test.mjs
+      - evaluation/compatibility/**
+      - .agents/plugins/marketplace.json
+      - plugins/**
+      - package.json
+      - package-lock.json
+  workflow_dispatch:
+    inputs:
+      source_commit:
+        description: Public context-relay commit to verify (40 lowercase hexadecimal characters)
+        required: false
+        default: dd3cbfb1f10c29808193dee167f4d595e7046f38
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  windows-plugin-install-matrix:
+    name: Windows plugin install isolation
+    runs-on: windows-latest
+    timeout-minutes: 25
+    env:
+      NODE_VERSION: 22.23.2
+      NODE_ZIP_SHA256: 1177b4137ba5adaa56354ae40f1080c7450e8ae09cecb47da459d1c52ac99f97
+      CODEX_CLI_VERSION: 0.144.5
+      CODEX_NPM_INTEGRITY: sha512-jjB+K+OMv572mKhS+2QuLxWXDJNdpwbPenf+V+8bdq7wg4Scqt3cn6WEekD8wPqDVZqck0HSX17K9rD9kbDJQA==
+      CODEX_WINDOWS_NPM_INTEGRITY: sha512-DnsSTlnnzleTxvLwIGnBitKInscxn2I7qASqosS8Fv+qysBygd+ZiBn/SQsRCgQ28PAlsNzmd3Gf3ZTecolAmg==
+      GIT_VERSION: 2.55.0.windows.4
+      GIT_RELEASE_TAG: v2.55.0.windows.4
+      MINGIT_ARCHIVE_NAME: MinGit-2.55.0.4-64-bit.zip
+      MINGIT_ARCHIVE_SHA256: 4e03f94c2ffbf70be337e005cee02661c732dbfc81031a078bda9299b9a7d644
+      SOURCE_COMMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.source_commit || 'dd3cbfb1f10c29808193dee167f4d595e7046f38' }}
+
+    steps:
+      - name: Check out evidence harness
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Prepare evidence directory
+        shell: pwsh
+        run: |
+          $evidenceDirectory = Join-Path $env:RUNNER_TEMP 'context-relay-plugin-isolation'
+          $npmPrefix = Join-Path $env:RUNNER_TEMP 'codex-npm-prefix'
+          New-Item -ItemType Directory -Force -Path $evidenceDirectory, $npmPrefix | Out-Null
+          "EVIDENCE_DIR=$evidenceDirectory" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "NPM_CONFIG_PREFIX=$npmPrefix" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $npmPrefix | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Install checksum-pinned Node.js
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $archiveName = "node-v$env:NODE_VERSION-win-x64.zip"
+          $downloadRoot = Join-Path $env:RUNNER_TEMP 'node-distribution'
+          $archivePath = Join-Path $downloadRoot $archiveName
+          $checksumsPath = Join-Path $downloadRoot 'SHASUMS256.txt'
+          $extractRoot = Join-Path $downloadRoot 'expanded'
+          New-Item -ItemType Directory -Force -Path $downloadRoot | Out-Null
+
+          Invoke-WebRequest -UseBasicParsing -Uri "https://nodejs.org/dist/v$env:NODE_VERSION/$archiveName" -OutFile $archivePath
+          Invoke-WebRequest -UseBasicParsing -Uri "https://nodejs.org/dist/v$env:NODE_VERSION/SHASUMS256.txt" -OutFile $checksumsPath
+
+          $published = @(Get-Content -LiteralPath $checksumsPath | Where-Object { $_ -match "^[0-9a-f]{64}\s+$([regex]::Escape($archiveName))$" })
+          if ($published.Count -ne 1) {
+            throw 'The official Node.js checksum manifest did not contain exactly one matching archive entry.'
+          }
+          $publishedHash = ($published[0] -split '\s+')[0].ToLowerInvariant()
+          $actualHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $archivePath).Hash.ToLowerInvariant()
+          if ($publishedHash -ne $env:NODE_ZIP_SHA256 -or $actualHash -ne $env:NODE_ZIP_SHA256) {
+            throw 'The Node.js archive checksum did not match the pinned official checksum.'
+          }
+
+          Expand-Archive -LiteralPath $archivePath -DestinationPath $extractRoot
+          $nodeRoot = Join-Path $extractRoot "node-v$env:NODE_VERSION-win-x64"
+          $nodeRoot | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Install checksum-pinned MinGit
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $downloadRoot = Join-Path $env:RUNNER_TEMP 'mingit-distribution'
+          $archivePath = Join-Path $downloadRoot $env:MINGIT_ARCHIVE_NAME
+          $extractRoot = Join-Path $downloadRoot 'expanded'
+          New-Item -ItemType Directory -Force -Path $downloadRoot | Out-Null
+          $uri = "https://github.com/git-for-windows/git/releases/download/$env:GIT_RELEASE_TAG/$env:MINGIT_ARCHIVE_NAME"
+          Invoke-WebRequest -UseBasicParsing -Uri $uri -OutFile $archivePath
+          $actualHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $archivePath).Hash.ToLowerInvariant()
+          if ($actualHash -ne $env:MINGIT_ARCHIVE_SHA256) {
+            throw 'The MinGit archive checksum did not match the pinned official release digest.'
+          }
+          Expand-Archive -LiteralPath $archivePath -DestinationPath $extractRoot
+          (Join-Path $extractRoot 'cmd') | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+
+      - name: Install evidence validator dependencies
+        shell: pwsh
+        run: npm.cmd ci --ignore-scripts --no-audit --no-fund
+
+      - name: Install checksum-verified Codex CLI package
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ((node --version).Trim() -ne "v$env:NODE_VERSION") {
+            throw 'The active Node.js version is not the pinned version.'
+          }
+          if ((git --version).Trim() -ne "git version $env:GIT_VERSION") {
+            throw 'The active Git version is not the pinned MinGit version.'
+          }
+          $distributionRoot = Join-Path $env:RUNNER_TEMP 'codex-distribution'
+          New-Item -ItemType Directory -Force -Path $distributionRoot | Out-Null
+          $topDist = npm.cmd view "@openai/codex@$env:CODEX_CLI_VERSION" dist --json | ConvertFrom-Json
+          $platformDist = npm.cmd view "@openai/codex@$env:CODEX_CLI_VERSION-win32-x64" dist --json | ConvertFrom-Json
+          if ([string]$topDist.integrity -ne $env:CODEX_NPM_INTEGRITY) {
+            throw 'The Codex CLI package integrity did not match the pinned registry integrity.'
+          }
+          if ([string]$platformDist.integrity -ne $env:CODEX_WINDOWS_NPM_INTEGRITY) {
+            throw 'The Windows Codex package integrity did not match the pinned registry integrity.'
+          }
+          $topUri = [Uri]$topDist.tarball
+          $platformUri = [Uri]$platformDist.tarball
+          if ($topUri.Scheme -ne 'https' -or $topUri.Host -ne 'registry.npmjs.org' -or
+              $platformUri.Scheme -ne 'https' -or $platformUri.Host -ne 'registry.npmjs.org') {
+            throw 'Codex distribution metadata returned an unexpected tarball origin.'
+          }
+          $topTarball = Join-Path $distributionRoot 'openai-codex.tgz'
+          $platformTarball = Join-Path $distributionRoot 'openai-codex-win32-x64.tgz'
+          Invoke-WebRequest -UseBasicParsing -Uri $topUri.AbsoluteUri -OutFile $topTarball
+          Invoke-WebRequest -UseBasicParsing -Uri $platformUri.AbsoluteUri -OutFile $platformTarball
+          function Get-Sha512Integrity([string]$Path) {
+            $sha512 = [System.Security.Cryptography.SHA512]::Create()
+            try {
+              $stream = [System.IO.File]::OpenRead($Path)
+              try { return 'sha512-' + [Convert]::ToBase64String($sha512.ComputeHash($stream)) }
+              finally { $stream.Dispose() }
+            }
+            finally { $sha512.Dispose() }
+          }
+          if ((Get-Sha512Integrity $topTarball) -ne $env:CODEX_NPM_INTEGRITY -or
+              (Get-Sha512Integrity $platformTarball) -ne $env:CODEX_WINDOWS_NPM_INTEGRITY) {
+            throw 'A downloaded Codex package did not match its pinned SHA-512 integrity.'
+          }
+          npm.cmd install --global $topTarball --ignore-scripts --no-audit --no-fund
+          if ((codex --version).Trim() -ne "codex-cli $env:CODEX_CLI_VERSION") {
+            throw 'The active Codex CLI version is not the pinned version.'
+          }
+          $platformExpanded = Join-Path $distributionRoot 'platform-expanded'
+          New-Item -ItemType Directory -Force -Path $platformExpanded | Out-Null
+          tar.exe -xf $platformTarball -C $platformExpanded
+          if ($LASTEXITCODE -ne 0) { throw 'The checksum-verified Windows Codex package could not be extracted.' }
+          $verifiedBinary = Join-Path $platformExpanded 'package\vendor\x86_64-pc-windows-msvc\bin\codex.exe'
+          $installedPlatformRoot = Join-Path $env:NPM_CONFIG_PREFIX 'node_modules\@openai\codex\node_modules\@openai\codex-win32-x64'
+          $installedPackage = Join-Path $installedPlatformRoot 'package.json'
+          $installedBinary = Join-Path $installedPlatformRoot 'vendor\x86_64-pc-windows-msvc\bin\codex.exe'
+          if (-not (Test-Path -LiteralPath $verifiedBinary -PathType Leaf) -or
+              -not (Test-Path -LiteralPath $installedPackage -PathType Leaf) -or
+              -not (Test-Path -LiteralPath $installedBinary -PathType Leaf)) {
+            throw 'The installed or verified Windows Codex platform payload was incomplete.'
+          }
+          $installedMetadata = Get-Content -Raw -LiteralPath $installedPackage | ConvertFrom-Json
+          if ([string]$installedMetadata.version -ne "$env:CODEX_CLI_VERSION-win32-x64") {
+            throw 'The installed Windows Codex package version was not pinned.'
+          }
+          if ((Get-FileHash -Algorithm SHA256 -LiteralPath $verifiedBinary).Hash -ne
+              (Get-FileHash -Algorithm SHA256 -LiteralPath $installedBinary).Hash) {
+            throw 'The installed Codex binary did not match the checksum-verified Windows package.'
+          }
+
+      - name: Run fail-closed plugin installation matrix
+        id: matrix
+        continue-on-error: true
+        shell: pwsh
+        run: |
+          ./tools/run-plugin-install-matrix.ps1 `
+            -SourceCommit $env:SOURCE_COMMIT `
+            -OutputDirectory $env:EVIDENCE_DIR
+
+      - name: Scan generated public evidence and finalize report
+        id: finalize
+        if: always()
+        shell: pwsh
+        run: |
+          ./tools/run-plugin-install-matrix.ps1 `
+            -SourceCommit $env:SOURCE_COMMIT `
+            -OutputDirectory $env:EVIDENCE_DIR `
+            -FinalizeOnly
+
+      - name: Validate evidence contract and linked artifact
+        id: validate
+        if: always() && steps.finalize.outcome == 'success'
+        shell: pwsh
+        run: |
+          node evaluation/compatibility/validate-report.mjs `
+            "$env:EVIDENCE_DIR\report.json" `
+            --check-evidence `
+            --expected-commit $env:SOURCE_COMMIT
+
+      - name: Upload sanitized installation evidence
+        if: always() && steps.finalize.outcome == 'success' && steps.validate.outcome == 'success'
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: plugin-isolation-${{ env.SOURCE_COMMIT }}
+          path: |
+            ${{ env.EVIDENCE_DIR }}\report.json
+            ${{ env.EVIDENCE_DIR }}\matrix-details.json
+            ${{ env.EVIDENCE_DIR }}\matrix-events.jsonl
+            ${{ env.EVIDENCE_DIR }}\privacy-scan.txt
+            ${{ env.EVIDENCE_DIR }}\checksums.sha256
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Enforce matrix result after safe evidence handling
+        if: always()
+        shell: pwsh
+        run: |
+          if ('${{ steps.matrix.outcome }}' -ne 'success') { throw 'Plugin installation matrix failed.' }
+          if ('${{ steps.finalize.outcome }}' -ne 'success') { throw 'Public evidence finalization failed.' }
+          if ('${{ steps.validate.outcome }}' -ne 'success') { throw 'Evidence contract validation failed.' }
