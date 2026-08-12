@@ -429,6 +429,24 @@ test("host baseline comparison is read-only, deterministic, and fails on drift",
   assert.deepEqual(report.changed_plugin_ids, ["execution-budget@context-relay"]);
 });
 
+test("Windows tar extracts zip archives without the PowerShell.Archive module", windowsOnly, () => {
+  const directory = fixture("sandbox-tar-zip");
+  const source = join(directory, "source");
+  const destination = join(directory, "destination");
+  const archive = join(directory, "fixture.zip");
+  mkdirSync(source);
+  mkdirSync(destination);
+  writeFileSync(join(source, "payload.txt"), "verified zip payload\n", "utf8");
+
+  const create = spawnSync("tar.exe", ["-a", "-cf", archive, "-C", source, "payload.txt"], {
+    encoding: "utf8",
+  });
+  assert.equal(create.status, 0, create.stderr);
+  const extract = spawnSync("tar.exe", ["-xf", archive, "-C", destination], { encoding: "utf8" });
+  assert.equal(extract.status, 0, extract.stderr);
+  assert.equal(readFileSync(join(destination, "payload.txt"), "utf8"), "verified zip payload\n");
+});
+
 test("bootstrap pins supply chain, keeps auth interactive, and emits fail-closed partial contracts", () => {
   const source = readFileSync(bootstrap, "utf8");
   const reportSource = readFileSync(partialReport, "utf8");
@@ -440,6 +458,9 @@ test("bootstrap pins supply chain, keeps auth interactive, and emits fail-closed
   assert.match(source, /2\.55\.0\.windows\.4/);
   assert.match(source, /MinGit-2\.55\.0\.4-64-bit\.zip/);
   assert.match(source, /4e03f94c2ffbf70be337e005cee02661c732dbfc81031a078bda9299b9a7d644/);
+  assert.doesNotMatch(source, /Expand-Archive/);
+  assert.match(source, /Invoke-CapturedProcess -Name "extract-mingit" -FilePath "tar\.exe"/);
+  assert.match(source, /Invoke-CapturedProcess -Name "extract-node" -FilePath "tar\.exe"/);
   assert.match(source, /git version \$GitVersion/);
   assert.match(source, /dd3cbfb1f10c29808193dee167f4d595e7046f38/);
   assert.match(source, /ComputeHash\(\$stream\)/);
@@ -495,6 +516,11 @@ test("generated partial compatibility report conforms to the shared runtime evid
   assert.equal(validation.status, 0, validation.stderr || validation.stdout);
   assert.equal(JSON.parse(validation.stdout).valid, true);
   const report = JSON.parse(readFileSync(reportPath, "utf8"));
+  assert.doesNotMatch(readFileSync(partialReport, "utf8"), /Get-FileHash/);
+  assert.equal(
+    report.evidence[0].sha256,
+    sha256(readFileSync(join(output, "evidence", "review-status.json"))),
+  );
   assert.equal(report.result, "partial");
   assert.equal(report.installation.fresh_context, true);
   assert.equal(report.trigger.status, "not-verifiable");

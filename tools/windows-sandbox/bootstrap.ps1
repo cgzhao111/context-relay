@@ -429,7 +429,10 @@ try {
         throw "MinGit archive failed the fixed SHA256 check."
     }
     $gitHome = Join-Path $toolRoot "mingit"
-    Expand-Archive -LiteralPath $minGitArchive -DestinationPath $gitHome -Force
+    New-Item -ItemType Directory -Force -Path $gitHome | Out-Null
+    Invoke-CapturedProcess -Name "extract-mingit" -FilePath "tar.exe" -Arguments @(
+        "-xf", $minGitArchive, "-C", $gitHome
+    ) | Out-Null
     $env:Path = (Join-Path $gitHome "cmd") + ";" + $env:Path
     Invoke-CapturedProcess -Name "git-version" -FilePath (Join-Path $gitHome "cmd\git.exe") -Arguments @("--version") | Out-Null
     $installedGitVersion = ([System.IO.File]::ReadAllText((Join-Path $script:RunRoot "git-version.stdout.private.txt"))).Trim()
@@ -445,7 +448,10 @@ try {
         throw "Node.js archive failed the fixed SHA256 check."
     }
     $nodeExpanded = Join-Path $toolRoot "node"
-    Expand-Archive -LiteralPath $nodeArchive -DestinationPath $nodeExpanded -Force
+    New-Item -ItemType Directory -Force -Path $nodeExpanded | Out-Null
+    Invoke-CapturedProcess -Name "extract-node" -FilePath "tar.exe" -Arguments @(
+        "-xf", $nodeArchive, "-C", $nodeExpanded
+    ) | Out-Null
     $nodeHome = Join-Path $nodeExpanded "node-v$NodeVersion-win-x64"
     $script:NodeHome = $nodeHome
     $env:Path = $nodeHome + ";" + $env:Path
