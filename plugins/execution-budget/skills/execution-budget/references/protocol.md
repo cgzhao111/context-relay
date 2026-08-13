@@ -53,6 +53,10 @@ does not store the raw task text.
 
 `authorized_actions` is the only source for `autonomy.may_proceed`; an estimate
 cannot grant file edits or tests that the user's request did not authorize.
+Derive it conservatively from the user's actual request, not from the actions a
+proposed plan would like to perform. When authorization is ambiguous, leave the
+array empty. Any edit, test, or repair authorization requires `READ_SCOPE`;
+repair additionally requires both `REVERSIBLE_EDIT` and `LOCAL_TEST`.
 `usage_observability` is `NONE`, `POST_RUN`, or `LIVE_HOST_TELEMETRY`. With no
 live telemetry, token boundaries are advisory and cannot cause an automatic
 pause. Host/model/reasoning/parallelism fields are calibration cohort labels,

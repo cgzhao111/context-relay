@@ -160,6 +160,40 @@ test("calibration metadata must be ordered, usable, and non-identifying", () => 
     /complete calibration contract/,
   );
 
+  const impossibleGeneratedAt = structuredClone(calibration);
+  impossibleGeneratedAt.generated_at = "2026-02-31T12:00:00Z";
+  assert.throws(
+    () => estimateExecutionBudget(request, impossibleGeneratedAt),
+    /complete calibration contract/,
+  );
+
+  const covertExclusion = structuredClone(calibration);
+  covertExclusion.exclusions = { private_project_name: 1 };
+  covertExclusion.excluded_records = 1;
+  assert.throws(
+    () => estimateExecutionBudget(request, covertExclusion),
+    /complete calibration contract/,
+  );
+
+  const covertPrivacyNote = structuredClone(calibration);
+  covertPrivacyNote.privacy.note = "private free text";
+  assert.throws(
+    () => estimateExecutionBudget(request, covertPrivacyNote),
+    /complete calibration contract/,
+  );
+
+  const unsafePercentile = structuredClone(calibration);
+  unsafePercentile.buckets[0].token_percentiles.p90 = Number.MAX_SAFE_INTEGER + 1;
+  assert.throws(
+    () => estimateExecutionBudget(request, unsafePercentile),
+    /complete calibration contract/,
+  );
+
+  const ajv = new Ajv2020({ allErrors: true, strict: true });
+  addFormats(ajv);
+  const validateCalibration = ajv.compile(schema("calibration.schema.json"));
+  assert.equal(validateCalibration(unsafePercentile), false);
+
   const identifying = structuredClone(request);
   identifying.runtime.host_version_bucket = "customer-project-a";
   assert.throws(() => estimateExecutionBudget(identifying), /numeric version bucket/);
@@ -176,10 +210,28 @@ test("duplicate observations and non-UTC timestamps cannot inflate calibration",
 
   const nonUtc = { ...telemetryRuns[0], observed_at: "2026-08-01 12:00:00" };
   assert.equal(buildCalibration([nonUtc]).exclusions.invalid_observed_at, 1);
+  const impossibleDate = { ...telemetryRuns[0], observed_at: "2026-02-31T12:00:00Z" };
+  assert.equal(buildCalibration([impossibleDate]).exclusions.invalid_observed_at, 1);
   assert.throws(
     () => buildCalibration(telemetryRuns, { generatedAt: "2026-08-12 12:00:00" }),
     /RFC 3339 UTC/,
   );
+  assert.throws(
+    () => buildCalibration(telemetryRuns, { generatedAt: "2026-02-31T12:00:00Z" }),
+    /RFC 3339 UTC/,
+  );
+});
+
+test("token telemetry must remain within the JavaScript safe-integer contract", () => {
+  const unsafe = { ...telemetryRuns[0], actual_total_tokens: Number.MAX_SAFE_INTEGER + 1 };
+  const calibration = buildCalibration([unsafe]);
+  assert.equal(calibration.eligible_records, 0);
+  assert.equal(calibration.exclusions.invalid_tokens, 1);
+
+  const ajv = new Ajv2020({ allErrors: true, strict: true });
+  addFormats(ajv);
+  const validateRun = ajv.compile(schema("run-record.schema.json"));
+  assert.equal(validateRun(unsafe), false);
 });
 
 test("runtime validation rejects fields the strict request schema does not allow", () => {
@@ -209,6 +261,24 @@ test("budget previews never grant unrequested write or test authority", () => {
   assert.deepEqual(estimateExecutionBudget(readOnly).autonomy.may_proceed, [
     "read within the authorized project scope",
   ]);
+});
+
+test("authorization dependencies reject contradictory action grants", () => {
+  const testWithoutRead = structuredClone(request);
+  testWithoutRead.authorization.authorized_actions = ["LOCAL_TEST"];
+  assert.throws(
+    () => estimateExecutionBudget(testWithoutRead),
+    /include READ_SCOPE/,
+  );
+
+  const repairWithoutTest = structuredClone(request);
+  repairWithoutTest.authorization.authorized_actions = [
+    "READ_SCOPE", "REVERSIBLE_EDIT", "REPAIR_IN_SCOPE_TEST_FAILURE",
+  ];
+  assert.throws(
+    () => estimateExecutionBudget(repairWithoutTest),
+    /requires both REVERSIBLE_EDIT and LOCAL_TEST/,
+  );
 });
 
 test("token limits are advisory without live telemetry and monitored only with it", () => {
@@ -286,6 +356,9 @@ test("schemas strictly validate public examples and generated artifacts", () => 
     calibration: ajv.compile(schema("calibration.schema.json")),
   };
   assert.equal(validators.request(request), true, JSON.stringify(validators.request.errors));
+  const contradictoryAuthorization = structuredClone(request);
+  contradictoryAuthorization.authorization.authorized_actions = ["REPAIR_IN_SCOPE_TEST_FAILURE"];
+  assert.equal(validators.request(contradictoryAuthorization), false);
   for (const record of publicRuns) {
     assert.equal(validators.run(record), true, JSON.stringify(validators.run.errors));
   }

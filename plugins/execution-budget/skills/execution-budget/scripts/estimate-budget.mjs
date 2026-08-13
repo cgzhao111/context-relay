@@ -25,6 +25,12 @@ const AUTHORIZED_ACTIONS = new Set([
   "READ_SCOPE", "REVERSIBLE_EDIT", "LOCAL_TEST", "REPAIR_IN_SCOPE_TEST_FAILURE",
 ]);
 const USAGE_OBSERVABILITY = new Set(["NONE", "POST_RUN", "LIVE_HOST_TELEMETRY"]);
+const CALIBRATION_EXCLUSIONS = new Set([
+  "invalid_shape", "unknown_or_private_field", "missing_field", "unsupported_schema",
+  "unsupported_category", "invalid_runtime", "synthetic_example", "unverified_usage_source",
+  "invalid_tokens", "invalid_duration", "invalid_observed_at", "invalid_outcome", "duplicate_record",
+]);
+const PRIVACY_NOTE = "Only aggregate run metadata and separate outcome flags belong in this file.";
 
 const BASELINES = {
   status_query: { tokens: 3000, minutes: 3 },
@@ -183,6 +189,14 @@ function normalizeRequest(request) {
     || authorizedActions.some((action) => !AUTHORIZED_ACTIONS.has(action))) {
     throw new Error("authorization.authorized_actions contains duplicates or unsupported actions");
   }
+  if (authorizedActions.some((action) => action !== "READ_SCOPE")
+    && !authorizedActions.includes("READ_SCOPE")) {
+    throw new Error("authorization must include READ_SCOPE before edits, tests, or repairs");
+  }
+  if (authorizedActions.includes("REPAIR_IN_SCOPE_TEST_FAILURE")
+    && (!authorizedActions.includes("REVERSIBLE_EDIT") || !authorizedActions.includes("LOCAL_TEST"))) {
+    throw new Error("repair authorization requires both REVERSIBLE_EDIT and LOCAL_TEST");
+  }
   if (!USAGE_OBSERVABILITY.has(request.usage_observability)) {
     throw new Error("unsupported usage_observability");
   }
@@ -236,19 +250,25 @@ function consistentOutcomes(outcomes, samples) {
 }
 
 function strictUtcTimestamp(value) {
-  return typeof value === "string"
-    && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(value)
-    && Number.isFinite(Date.parse(value));
+  if (typeof value !== "string") return false;
+  const match = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d{1,3}))?Z$/.exec(value);
+  if (!match) return false;
+  const milliseconds = (match[2] ?? "").padEnd(3, "0");
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed)
+    && new Date(parsed).toISOString() === `${match[1]}.${milliseconds}Z`;
 }
 
-function orderedPercentiles(value) {
+function orderedPercentiles(value, { safeInteger = false } = {}) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   try {
     assertExactKeys(value, ["p20", "p50", "p80", "p90"], "calibration percentiles");
   } catch {
     return false;
   }
-  return [value.p20, value.p50, value.p80, value.p90].every((item) => Number.isFinite(item) && item > 0)
+  const items = [value.p20, value.p50, value.p80, value.p90];
+  return items.every((item) => Number.isFinite(item) && item > 0
+    && (!safeInteger || Number.isSafeInteger(item)))
     && value.p20 <= value.p50
     && value.p50 <= value.p80
     && value.p80 <= value.p90;
@@ -270,14 +290,16 @@ function validCalibration(calibration) {
     || calibration.provenance_trust !== "CALLER_ATTESTED"
     || !strictUtcTimestamp(calibration.generated_at)
     || calibration.minimum_usable_samples !== 5
-    || !Number.isInteger(calibration.eligible_records) || calibration.eligible_records < 0
-    || !Number.isInteger(calibration.excluded_records) || calibration.excluded_records < 0
+    || !Number.isSafeInteger(calibration.eligible_records) || calibration.eligible_records < 0
+    || !Number.isSafeInteger(calibration.excluded_records) || calibration.excluded_records < 0
     || !calibration.exclusions || typeof calibration.exclusions !== "object"
     || Array.isArray(calibration.exclusions)
     || !Array.isArray(calibration.buckets)) return false;
 
-  const exclusions = Object.values(calibration.exclusions);
-  if (!exclusions.every((count) => Number.isInteger(count) && count >= 1)
+  const exclusionEntries = Object.entries(calibration.exclusions);
+  const exclusions = exclusionEntries.map(([, count]) => count);
+  if (exclusionEntries.some(([key]) => !CALIBRATION_EXCLUSIONS.has(key))
+    || !exclusions.every((count) => Number.isSafeInteger(count) && count >= 1)
     || exclusions.reduce((sum, count) => sum + count, 0) !== calibration.excluded_records) return false;
 
   const privacy = calibration.privacy;
@@ -292,7 +314,7 @@ function validCalibration(calibration) {
   if (privacy.stores_raw_prompts !== false
     || privacy.stores_transcripts !== false
     || privacy.stores_source_files !== false
-    || typeof privacy.note !== "string" || privacy.note.length === 0) return false;
+    || privacy.note !== PRIVACY_NOTE) return false;
 
   const seenKeys = new Set();
   let sampleTotal = 0;
@@ -315,14 +337,14 @@ function validCalibration(calibration) {
     if (!TASK_TYPES.has(entry.task_type)
       || !["small", "medium", "large"].includes(entry.size_bucket)
       || !["quick", "standard", "deep"].includes(entry.mode)
-      || !Number.isInteger(entry.samples) || entry.samples < 1
+      || !Number.isSafeInteger(entry.samples) || entry.samples < 1
       || typeof entry.usable !== "boolean"
       || !["insufficient", "low"].includes(entry.confidence)
       || entry.usable !== (entry.samples >= 5)
       || entry.confidence !== (entry.samples >= 5 ? "low" : "insufficient")
       || entry.key !== calibrationKey(runtime, entry.task_type, entry.size_bucket, entry.mode)
       || seenKeys.has(entry.key)
-      || !orderedPercentiles(entry.token_percentiles)
+      || !orderedPercentiles(entry.token_percentiles, { safeInteger: true })
       || !orderedPercentiles(entry.duration_percentiles)
       || !consistentOutcomes(entry.outcomes, entry.samples)) return false;
     seenKeys.add(entry.key);
@@ -338,13 +360,13 @@ function calibrationBucket(calibration, normalized, bucket, mode) {
     && entry?.task_type === normalized.task.task_type
     && entry?.size_bucket === bucket
     && entry?.mode === mode
-    && Number.isInteger(entry?.samples)
+    && Number.isSafeInteger(entry?.samples)
     && entry.samples >= 5
     && entry?.usable === true
     && entry?.confidence === "low"
     && entry?.key === calibrationKey(normalized.runtime, normalized.task.task_type, bucket, mode)
     && consistentOutcomes(entry?.outcomes, entry.samples)
-    && orderedPercentiles(entry?.token_percentiles)
+    && orderedPercentiles(entry?.token_percentiles, { safeInteger: true })
     && orderedPercentiles(entry?.duration_percentiles)
   ) ?? null;
 }

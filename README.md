@@ -118,13 +118,13 @@ git clone https://github.com/cgzhao111/context-relay.git
 On macOS or Linux:
 
 ```bash
-cp -R context-relay/skills/project-handoff ~/.codex/skills/project-handoff
+cp -R context-relay/plugins/context-relay/skills/project-handoff ~/.codex/skills/project-handoff
 ```
 
 On Windows PowerShell:
 
 ```powershell
-Copy-Item -Recurse -Force .\context-relay\skills\project-handoff "$env:USERPROFILE\.codex\skills\project-handoff"
+Copy-Item -Recurse -Force .\context-relay\plugins\context-relay\skills\project-handoff "$env:USERPROFILE\.codex\skills\project-handoff"
 ```
 
 Execution Budget Beta lives at
@@ -143,7 +143,12 @@ On Windows PowerShell:
 Copy-Item -Recurse -Force .\context-relay\plugins\execution-budget\skills\execution-budget "$env:USERPROFILE\.codex\skills\execution-budget"
 ```
 
-The repository includes the standard `.codex-plugin/plugin.json` manifest. It is not yet listed in the universal public Plugins Directory; the repo marketplace and skill-only copy are the supported installation paths for this version. See the official [plugin packaging guide](https://developers.openai.com/plugins/build/plugins) for the marketplace model.
+Each plugin has its own standard manifest under its `plugins` subdirectory—for
+example, `plugins/context-relay/.codex-plugin/plugin.json`. The project is not
+yet listed in the universal public Plugins Directory; the repo marketplace and
+skill-only copy are the supported installation paths for this version. See the
+official [plugin packaging guide](https://developers.openai.com/plugins/build/plugins)
+for the marketplace model.
 
 ## Use
 
@@ -205,7 +210,7 @@ handoff.json          Open, versioned machine-readable record
 workspace-snapshot.json  Optional Git and file freshness evidence
 ```
 
-See [`examples/basic`](examples/basic) for a synthetic handoff, [`evaluation/cases`](evaluation/cases) for three deterministic fail-closed cases, and the [public protocol](skills/project-handoff/references/protocol.md) for the format and trust model.
+See [`examples/basic`](examples/basic) for a synthetic handoff, [`evaluation/cases`](evaluation/cases) for three deterministic fail-closed cases, and the [public protocol](plugins/context-relay/skills/project-handoff/references/protocol.md) for the format and trust model.
 
 ## Security and privacy
 
@@ -221,7 +226,7 @@ Execution Budget `0.1.0` is a separately selectable Beta. The Beta's sample
 runs are synthetic and demonstrate calibration mechanics, not measured savings.
 Cross-device storage, complete transcript ingestion, automatic task creation,
 automatic model switching, and exact whole-task token prediction remain
-explicitly out of scope. The package is not published to npm; GitHub source and
+explicitly out of scope. The package is marked private and is not published to npm; GitHub source and
 releases are the supported distribution channels for this version.
 
 The evaluation design is documented in [`docs/EVALUATION.md`](docs/EVALUATION.md). Published compatibility claims must name the host, version or date, plugin commit, tested workflow, and observed result.

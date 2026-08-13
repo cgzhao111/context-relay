@@ -8,6 +8,8 @@ versioning while the public protocol is versioned independently.
 - Added `Execution Budget (Beta)` as a second, separately selectable plugin
   in the Context Relay repository marketplace; release-candidate installation
   and cache isolation remain a publication gate.
+- Moved the stable plugin into the standard `plugins/context-relay` source root,
+  so the stable and Beta Marketplace entries no longer overlap physically.
 - Added deterministic heuristic and outcome-labeled calibration tools for
   whole-task token/time ranges, meaningful pause boundaries, and three
   execution modes without an additional model call.

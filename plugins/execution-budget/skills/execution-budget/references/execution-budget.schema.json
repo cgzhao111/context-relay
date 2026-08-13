@@ -91,8 +91,8 @@
       "additionalProperties": false,
       "required": ["min", "max", "confidence"],
       "properties": {
-        "min": { "type": "number", "minimum": 0 },
-        "max": { "type": "number", "minimum": 0 },
+        "min": { "type": "number", "minimum": 0, "maximum": 9007199254740991 },
+        "max": { "type": "number", "minimum": 0, "maximum": 9007199254740991 },
         "confidence": { "enum": ["low", "medium", "high"] }
       }
     },
@@ -101,11 +101,11 @@
       "additionalProperties": false,
       "required": ["min", "max", "confidence", "basis", "samples"],
       "properties": {
-        "min": { "type": "number", "minimum": 0 },
-        "max": { "type": "number", "minimum": 0 },
+        "min": { "type": "number", "minimum": 0, "maximum": 9007199254740991 },
+        "max": { "type": "number", "minimum": 0, "maximum": 9007199254740991 },
         "confidence": { "enum": ["low", "medium", "high"] },
         "basis": { "enum": ["HEURISTIC_RANGE", "CALIBRATED_RANGE"] },
-        "samples": { "type": "integer", "minimum": 0 }
+        "samples": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 }
       }
     },
     "scope": {

@@ -19,8 +19,8 @@ test("release bundle contains both selectable plugin manifests and no private ru
   const paths = new Set(report.files.map(({ path }) => path.replaceAll("\\", "/")));
   for (const required of [
     ".agents/plugins/marketplace.json",
-    ".codex-plugin/plugin.json",
-    "skills/project-handoff/SKILL.md",
+    "plugins/context-relay/.codex-plugin/plugin.json",
+    "plugins/context-relay/skills/project-handoff/SKILL.md",
     "plugins/execution-budget/.codex-plugin/plugin.json",
     "plugins/execution-budget/skills/execution-budget/SKILL.md",
     "plugins/execution-budget/skills/execution-budget/scripts/estimate-budget.mjs",
@@ -29,6 +29,8 @@ test("release bundle contains both selectable plugin manifests and no private ru
     assert.ok(paths.has(required), `release bundle missing ${required}`);
   }
   for (const path of paths) {
+    assert.equal(path.startsWith(".codex-plugin/"), false, `release bundle contains root plugin source ${path}`);
+    assert.equal(path.startsWith("skills/"), false, `release bundle contains shared root Skill source ${path}`);
     assert.equal(path.startsWith("test/"), false, `release bundle contains ${path}`);
     assert.equal(path.startsWith(".github/"), false, `release bundle contains ${path}`);
     assert.equal(path.startsWith(".execution-budget/"), false, `release bundle contains ${path}`);

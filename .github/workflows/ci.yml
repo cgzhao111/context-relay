@@ -34,7 +34,7 @@ jobs:
       - name: Validate both plugin manifests and Skills against pinned official tools
         shell: bash
         run: |
-          python3 .official-codex-validators/codex-rs/skills/src/assets/samples/plugin-creator/scripts/validate_plugin.py .
+          python3 .official-codex-validators/codex-rs/skills/src/assets/samples/plugin-creator/scripts/validate_plugin.py plugins/context-relay
           python3 .official-codex-validators/codex-rs/skills/src/assets/samples/plugin-creator/scripts/validate_plugin.py plugins/execution-budget
-          python3 .official-codex-validators/codex-rs/skills/src/assets/samples/skill-creator/scripts/quick_validate.py skills/project-handoff
+          python3 .official-codex-validators/codex-rs/skills/src/assets/samples/skill-creator/scripts/quick_validate.py plugins/context-relay/skills/project-handoff
           python3 .official-codex-validators/codex-rs/skills/src/assets/samples/skill-creator/scripts/quick_validate.py plugins/execution-budget/skills/execution-budget

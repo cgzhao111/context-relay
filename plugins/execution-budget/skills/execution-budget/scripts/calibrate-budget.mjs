@@ -17,6 +17,7 @@ const HOST_FAMILIES = new Set(["generic", "codex"]);
 const MODEL_TIERS = new Set(["unknown", "balanced", "frontier"]);
 const REASONING_EFFORTS = new Set(["unknown", "low", "medium", "high", "max", "ultra"]);
 const PARALLELISM = new Set(["single", "multi"]);
+const PRIVACY_NOTE = "Only aggregate run metadata and separate outcome flags belong in this file.";
 const ALLOWED_FIELDS = new Set([
   "schema_version", "task_type", "size_bucket", "mode", "runtime",
   "usage_source",
@@ -45,6 +46,16 @@ function percentile(sortedValues, percentileValue) {
   return sortedValues[Math.max(0, Math.min(sortedValues.length - 1, index))];
 }
 
+function validUtcTimestamp(value) {
+  if (typeof value !== "string") return false;
+  const match = /^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(\d{1,3}))?Z$/.exec(value);
+  if (!match) return false;
+  const milliseconds = (match[2] ?? "").padEnd(3, "0");
+  const parsed = Date.parse(value);
+  return Number.isFinite(parsed)
+    && new Date(parsed).toISOString() === `${match[1]}.${milliseconds}Z`;
+}
+
 function classifyRecord(record) {
   if (!record || typeof record !== "object" || Array.isArray(record)) return "invalid_shape";
   if (Object.keys(record).some((key) => !ALLOWED_FIELDS.has(key))) return "unknown_or_private_field";
@@ -56,11 +67,9 @@ function classifyRecord(record) {
   if (!validRuntime(record.runtime)) return "invalid_runtime";
   if (record.usage_source === "SYNTHETIC") return "synthetic_example";
   if (!USAGE_SOURCES.has(record.usage_source)) return "unverified_usage_source";
-  if (!Number.isInteger(record.actual_total_tokens) || record.actual_total_tokens <= 0) return "invalid_tokens";
+  if (!Number.isSafeInteger(record.actual_total_tokens) || record.actual_total_tokens <= 0) return "invalid_tokens";
   if (!Number.isFinite(record.actual_duration_minutes) || record.actual_duration_minutes <= 0) return "invalid_duration";
-  if (typeof record.observed_at !== "string"
-    || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(record.observed_at)
-    || !Number.isFinite(Date.parse(record.observed_at))) {
+  if (!validUtcTimestamp(record.observed_at)) {
     return "invalid_observed_at";
   }
   if (typeof record.success !== "boolean"
@@ -79,9 +88,7 @@ function bucketKey(record) {
 
 export function buildCalibration(records, { generatedAt = new Date().toISOString() } = {}) {
   if (!Array.isArray(records)) throw new Error("records must be an array");
-  if (typeof generatedAt !== "string"
-    || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d{1,3})?Z$/.test(generatedAt)
-    || !Number.isFinite(Date.parse(generatedAt))) {
+  if (!validUtcTimestamp(generatedAt)) {
     throw new Error("generatedAt must be an RFC 3339 UTC timestamp");
   }
   const groups = new Map();
@@ -160,7 +167,7 @@ export function buildCalibration(records, { generatedAt = new Date().toISOString
       stores_raw_prompts: false,
       stores_transcripts: false,
       stores_source_files: false,
-      note: "Only aggregate run metadata and separate outcome flags belong in this file.",
+      note: PRIVACY_NOTE,
     },
   };
 }
@@ -188,7 +195,11 @@ function parseArgs(argv) {
     const key = argv[index];
     if (!["--runs", "--output", "--generated-at"].includes(key)) throw new Error(`unknown argument: ${key}`);
     const value = argv[index + 1];
-    if (!value) throw new Error(`${key} requires a path`);
+    if (!value) {
+      throw new Error(key === "--generated-at"
+        ? "--generated-at requires an RFC 3339 UTC timestamp"
+        : `${key} requires a path`);
+    }
     if (key === "--generated-at") args.generatedAt = value;
     else args[key.slice(2)] = value;
     index += 1;

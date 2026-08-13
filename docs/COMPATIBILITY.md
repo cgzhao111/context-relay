@@ -10,7 +10,7 @@ or repository layout.
 | --- | --- | --- | --- | --- | --- | --- |
 | Self-handoff dogfood v1 | `d5cd032e9b3db82f29a194d687f2608d3cc2e419` | `VISIBLE_CONTEXT_ONLY` | Codex host; version `not_exposed` | `not_exposed` | Pickup coverage, strict validation, five file digests, Git, CI, release, installation, and ignored private artifacts | Passed for the single published observation |
 | Marketplace install v0.2.0 | `v0.2.0` / `d97f96be47e14d46c4012e5d9ae1924df686d580` | Not applicable | Codex CLI `0.144.5` on Windows, tested 2026-08-12 | Not applicable | Git marketplace refresh, plugin install, installed version check, official plugin validation, and official skill validation | Passed |
-| Two-plugin selection pre-release | Local working tree on 2026-08-12; not a public revision | Not applicable | Static repository and release-bundle gates | Not applicable | Separate Marketplace identities, manifests and Skill catalogs, exact entries, release inventory | Passed structurally; the stable source root physically contains the nested Beta source, and real Codex CLI cache/install/upgrade/removal remains a publication blocker |
+| Two-plugin selection pre-release | Local release candidate on 2026-08-12; not a public revision | Not applicable | Static repository and release-bundle gates | Not applicable | Separate `plugins/context-relay` and `plugins/execution-budget` source roots, Marketplace identities, manifests, Skill catalogs, exact entries, release inventory | Passed structurally; real Codex CLI cache/install/upgrade/removal and fresh-task visibility remain publication blockers |
 
 The detailed aggregate result is in
 [`evaluation/dogfood/context-relay-self-handoff-v1/`](../evaluation/dogfood/context-relay-self-handoff-v1/).

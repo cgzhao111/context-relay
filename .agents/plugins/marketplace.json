@@ -8,7 +8,7 @@
       "name": "context-relay",
       "source": {
         "source": "local",
-        "path": "./"
+        "path": "./plugins/context-relay"
       },
       "policy": {
         "installation": "AVAILABLE",

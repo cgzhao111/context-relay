@@ -15,11 +15,26 @@
     "provenance_trust": { "const": "CALLER_ATTESTED" },
     "generated_at": { "type": "string", "format": "date-time" },
     "minimum_usable_samples": { "const": 5 },
-    "eligible_records": { "type": "integer", "minimum": 0 },
-    "excluded_records": { "type": "integer", "minimum": 0 },
+    "eligible_records": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
+    "excluded_records": { "type": "integer", "minimum": 0, "maximum": 9007199254740991 },
     "exclusions": {
       "type": "object",
-      "additionalProperties": { "type": "integer", "minimum": 1 }
+      "additionalProperties": false,
+      "properties": {
+        "invalid_shape": { "$ref": "#/$defs/positiveCount" },
+        "unknown_or_private_field": { "$ref": "#/$defs/positiveCount" },
+        "missing_field": { "$ref": "#/$defs/positiveCount" },
+        "unsupported_schema": { "$ref": "#/$defs/positiveCount" },
+        "unsupported_category": { "$ref": "#/$defs/positiveCount" },
+        "invalid_runtime": { "$ref": "#/$defs/positiveCount" },
+        "synthetic_example": { "$ref": "#/$defs/positiveCount" },
+        "unverified_usage_source": { "$ref": "#/$defs/positiveCount" },
+        "invalid_tokens": { "$ref": "#/$defs/positiveCount" },
+        "invalid_duration": { "$ref": "#/$defs/positiveCount" },
+        "invalid_observed_at": { "$ref": "#/$defs/positiveCount" },
+        "invalid_outcome": { "$ref": "#/$defs/positiveCount" },
+        "duplicate_record": { "$ref": "#/$defs/positiveCount" }
+      }
     },
     "buckets": {
       "type": "array",
@@ -41,10 +56,10 @@
           },
           "size_bucket": { "enum": ["small", "medium", "large"] },
           "mode": { "enum": ["quick", "standard", "deep"] },
-          "samples": { "type": "integer", "minimum": 1 },
+          "samples": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
           "usable": { "type": "boolean" },
           "confidence": { "enum": ["insufficient", "low"] },
-          "token_percentiles": { "$ref": "#/$defs/percentiles" },
+          "token_percentiles": { "$ref": "#/$defs/tokenPercentiles" },
           "duration_percentiles": { "$ref": "#/$defs/percentiles" },
           "outcomes": { "$ref": "#/$defs/outcomes" }
         }
@@ -58,11 +73,18 @@
         "stores_raw_prompts": { "const": false },
         "stores_transcripts": { "const": false },
         "stores_source_files": { "const": false },
-        "note": { "type": "string", "minLength": 1 }
+        "note": {
+          "const": "Only aggregate run metadata and separate outcome flags belong in this file."
+        }
       }
     }
   },
   "$defs": {
+    "positiveCount": {
+      "type": "integer",
+      "minimum": 1,
+      "maximum": 9007199254740991
+    },
     "runtime": {
       "type": "object",
       "additionalProperties": false,
@@ -90,6 +112,17 @@
         "p50": { "type": "number", "exclusiveMinimum": 0 },
         "p80": { "type": "number", "exclusiveMinimum": 0 },
         "p90": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "tokenPercentiles": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["p20", "p50", "p80", "p90"],
+      "properties": {
+        "p20": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "p50": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "p80": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
+        "p90": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 }
       }
     },
     "outcomes": {

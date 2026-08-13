@@ -48,8 +48,18 @@
       "required": ["mode", "token_limit", "time_limit_minutes", "force_card"],
       "properties": {
         "mode": { "enum": ["auto", "quick", "standard", "deep"] },
-        "token_limit": { "type": ["number", "null"], "exclusiveMinimum": 0 },
-        "time_limit_minutes": { "type": ["number", "null"], "exclusiveMinimum": 0 },
+        "token_limit": {
+          "anyOf": [
+            { "type": "number", "exclusiveMinimum": 0 },
+            { "type": "null" }
+          ]
+        },
+        "time_limit_minutes": {
+          "anyOf": [
+            { "type": "number", "exclusiveMinimum": 0 },
+            { "type": "null" }
+          ]
+        },
         "force_card": { "type": "boolean" }
       }
     },
@@ -69,7 +79,52 @@
             ]
           }
         }
-      }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "authorized_actions": {
+                "type": "array",
+                "contains": {
+                  "enum": [
+                    "REVERSIBLE_EDIT", "LOCAL_TEST", "REPAIR_IN_SCOPE_TEST_FAILURE"
+                  ]
+                }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "authorized_actions": {
+                "type": "array",
+                "contains": { "const": "READ_SCOPE" }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "authorized_actions": {
+                "type": "array",
+                "contains": { "const": "REPAIR_IN_SCOPE_TEST_FAILURE" }
+              }
+            }
+          },
+          "then": {
+            "properties": {
+              "authorized_actions": {
+                "type": "array",
+                "allOf": [
+                  { "contains": { "const": "REVERSIBLE_EDIT" } },
+                  { "contains": { "const": "LOCAL_TEST" } }
+                ]
+              }
+            }
+          }
+        }
+      ]
     },
     "usage_observability": { "enum": ["NONE", "POST_RUN", "LIVE_HOST_TELEMETRY"] }
   },

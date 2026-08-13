@@ -32,7 +32,7 @@
     "defaultPrompt": [
       "Estimate an execution budget and approval boundary for this task.",
       "Compare quick, standard, and deep execution plans before starting.",
-      "Calibrate future task estimates from these quality-checked run records."
+      "Calibrate future task estimates from these outcome-labeled, caller-attested run records."
     ],
     "brandColor": "#7C3AED"
   }

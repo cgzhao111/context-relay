@@ -1,6 +1,6 @@
 ---
 name: execution-budget
-description: Preview, compare, or calibrate an AI coding task's execution budget before work begins. Use when a user wants a token or effort estimate, wants quick/standard/deep execution choices, is uncertain whether repeated approvals are useful, wants explicit autonomy and pause boundaries, wants to cap a long task, or provides actual quality-checked usage for future calibration. Do not trigger for trivial one-step work unless the user explicitly asks for a budget.
+description: Preview, compare, or calibrate an AI coding task's execution budget before work begins. Use when a user wants a token or effort estimate, wants quick/standard/deep execution choices, is uncertain whether repeated approvals are useful, wants explicit autonomy and pause boundaries, wants to cap a long task, or provides structured caller-attested usage for future calibration. Do not trigger for trivial one-step work unless the user explicitly asks for a budget.
 ---
 
 # Execution Budget
@@ -31,10 +31,10 @@ Skip the visible budget card when the task is trivial, low-risk, and the user di
 
 1. Use only signals already available from the request and proportionate read-only inspection: task type, expected files, tests, ambiguity, rollback difficulty, production impact, external writes, credentials, personal data, and destructive operations.
 2. Do not scan the whole repository solely for estimation. For a large project, inspect Git status and the explicitly relevant paths only.
-3. Build the compact request described in `references/protocol.md` in memory. Do not persist raw task text; the request contract does not contain it. Send JSON on stdin or run:
+3. Build the compact request described in `references/protocol.md` in memory. Do not persist raw task text; the request contract does not contain it. Resolve the script relative to this `SKILL.md` instead of assuming the user's workspace is the Skill directory. Send JSON on stdin or run:
 
    ```text
-   node scripts/estimate-budget.mjs [--calibration <calibration.local.json>]
+   node {skill-root}/scripts/estimate-budget.mjs [--calibration <calibration.local.json>]
    ```
 
    The estimator is stdout-only and therefore remains a read-only preview.
@@ -65,8 +65,10 @@ When actual token telemetry is unavailable, label observed usage `not_available`
 4. Run:
 
    ```text
-   node scripts/calibrate-budget.mjs --runs <runs.jsonl> [--output .execution-budget/calibration.local.json]
+   node {skill-root}/scripts/calibrate-budget.mjs --runs <runs.jsonl> [--output .execution-budget/calibration.local.json]
    ```
+
+   Run the command with the authorized project root as the working directory so any optional local calibration file stays inside that project's ignored `.execution-budget` directory.
 
 5. Report sample and exclusion counts, P20/P50/P80/P90, runtime cohort, outcome rates, caller-attested provenance, and generation time. Do not claim general savings without a quality-controlled comparison.
 

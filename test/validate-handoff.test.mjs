@@ -13,7 +13,7 @@ import {
   runCli,
   scanSensitiveData,
   validateHandoff,
-} from '../skills/project-handoff/scripts/validate-handoff.mjs';
+} from '../plugins/context-relay/skills/project-handoff/scripts/validate-handoff.mjs';
 
 function sha256(content) {
   return createHash('sha256').update(content).digest('hex');
@@ -82,7 +82,7 @@ async function fixture() {
 }
 
 test('schema is strict at the top level and defines required provenance fields', async () => {
-  const schemaPath = new URL('../skills/project-handoff/references/handoff.schema.json', import.meta.url);
+  const schemaPath = new URL('../plugins/context-relay/skills/project-handoff/references/handoff.schema.json', import.meta.url);
   const schema = JSON.parse(await readFile(schemaPath, 'utf8'));
   assert.equal(schema.additionalProperties, false);
   assert.ok(schema.required.includes('handoff_id'));
@@ -92,7 +92,7 @@ test('schema is strict at the top level and defines required provenance fields',
 });
 
 test('published synthetic example conforms to the JSON Schema', async () => {
-  const schemaPath = new URL('../skills/project-handoff/references/handoff.schema.json', import.meta.url);
+  const schemaPath = new URL('../plugins/context-relay/skills/project-handoff/references/handoff.schema.json', import.meta.url);
   const examplePath = new URL('../examples/basic/handoff.json', import.meta.url);
   const schema = JSON.parse(await readFile(schemaPath, 'utf8'));
   const example = JSON.parse(await readFile(examplePath, 'utf8'));

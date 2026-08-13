@@ -21,7 +21,7 @@
     "mode": { "enum": ["quick", "standard", "deep"] },
     "runtime": { "$ref": "#/$defs/runtime" },
     "usage_source": { "enum": ["HOST_REPORTED", "API_RESPONSE", "SYNTHETIC"] },
-    "actual_total_tokens": { "type": "integer", "minimum": 1 },
+    "actual_total_tokens": { "type": "integer", "minimum": 1, "maximum": 9007199254740991 },
     "actual_duration_minutes": { "type": "number", "exclusiveMinimum": 0 },
     "success": { "type": "boolean" },
     "quality_gate_passed": { "type": "boolean" },

@@ -4,7 +4,8 @@ import { dirname, extname, isAbsolute, join, relative, resolve } from "node:path
 import { fileURLToPath } from "node:url";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
-const manifest = JSON.parse(readFileSync(join(root, ".codex-plugin", "plugin.json"), "utf8"));
+const corePluginRoot = join(root, "plugins", "context-relay");
+const manifest = JSON.parse(readFileSync(join(corePluginRoot, ".codex-plugin", "plugin.json"), "utf8"));
 const budgetPluginRoot = join(root, "plugins", "execution-budget");
 const budgetManifest = JSON.parse(readFileSync(join(budgetPluginRoot, ".codex-plugin", "plugin.json"), "utf8"));
 const marketplace = JSON.parse(readFileSync(join(root, ".agents", "plugins", "marketplace.json"), "utf8"));
@@ -16,15 +17,18 @@ const strictSemver = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]
 assert.match(manifest.version, strictSemver);
 assert.equal(manifest.skills, "./skills/");
 assert.equal(manifest.license, "Apache-2.0");
-assert.ok(existsSync(join(root, "skills", "project-handoff", "SKILL.md")));
+assert.ok(existsSync(join(corePluginRoot, "skills", "project-handoff", "SKILL.md")));
 assert.deepEqual(
-  readdirSync(join(root, "skills"), { withFileTypes: true })
+  readdirSync(join(corePluginRoot, "skills"), { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name),
   ["project-handoff"],
-  "the root direct Skill catalog must contain only project-handoff",
+  "the context-relay Skill catalog must contain only project-handoff",
 );
+assert.equal(existsSync(join(root, ".codex-plugin")), false, "repository root must not be a plugin source");
+assert.equal(existsSync(join(root, "skills")), false, "repository root must not expose a shared Skill catalog");
 assert.equal(packageJson.version, manifest.version);
+assert.equal(packageJson.private, true, "the GitHub release bundle must not be accidentally npm-publishable");
 assert.equal(packageLock.version, manifest.version);
 assert.equal(packageLock.packages?.[""]?.version, manifest.version);
 assert.match(
@@ -61,8 +65,12 @@ function assertMarketplaceEntry(entry, pluginManifest, expectedPath) {
   assert.ok(existsSync(join(sourceRoot, ".codex-plugin", "plugin.json")));
 }
 
-assertMarketplaceEntry(marketplace.plugins[0], manifest, "./");
+assertMarketplaceEntry(marketplace.plugins[0], manifest, "./plugins/context-relay");
 assertMarketplaceEntry(marketplace.plugins[1], budgetManifest, "./plugins/execution-budget");
+const coreReal = realpathSync(corePluginRoot);
+const budgetReal = realpathSync(budgetPluginRoot);
+assert.ok(relative(coreReal, budgetReal).startsWith(".."), "Beta source must not be inside the core source");
+assert.ok(relative(budgetReal, coreReal).startsWith(".."), "core source must not be inside the Beta source");
 
 assert.equal(budgetManifest.name, "execution-budget");
 assert.equal(budgetManifest.version, "0.1.0");
