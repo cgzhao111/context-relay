@@ -107,6 +107,7 @@ test("harness refuses CODEX_HOME overrides and emits bounded evidence", () => {
   assert.match(harness, /MATRIX_FAILED/);
   assert.match(harness, /\(\[DateTimeOffset\]\$details\.completedAt\)\.ToUniversalTime\(\)\.ToString\('o'\)/);
   assert.match(harness, /\$script:stage = "\$StepId-cache-namespace"/);
+  assert.match(harness, /uniqueEntryCount = @\(\$entryNames \| Sort-Object -Unique\)\.Count/);
   assert.doesNotMatch(harness, /Set-Content[^\r\n]*(?:\$stdout|\$stderr)/i);
   const evidenceProjection = harness.slice(
     harness.indexOf("$sanitizedEntries ="),

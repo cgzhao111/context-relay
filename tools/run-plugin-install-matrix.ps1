@@ -79,6 +79,9 @@ $details = [ordered]@{
     pluginVersions = [ordered]@{}
     sourceTrees = [ordered]@{}
   }
+  diagnostics = [ordered]@{
+    lastSnapshot = $null
+  }
   steps = [System.Collections.Generic.List[object]]::new()
   failure = $null
 }
@@ -368,7 +371,15 @@ function Save-StateSnapshot {
   $entries = @(Get-PluginEntries -Listing $listing)
   $script:stage = "$StepId-marketplace-inventory"
   $entryNames = @($entries | ForEach-Object { [string]$_.name })
+  $details.diagnostics.lastSnapshot = [ordered]@{
+    stepId = $StepId
+    entryNames = @($entryNames | Sort-Object)
+    entryCount = $entryNames.Count
+    uniqueEntryCount = @($entryNames | Sort-Object -Unique).Count
+    installedNames = @()
+  }
   Assert-SetEqual -Actual $entryNames -Expected $pluginNames -Label "$StepId marketplace inventory"
+  $script:stage = "$StepId-duplicate-entries"
   if (($entryNames | Group-Object | Where-Object Count -ne 1).Count -ne 0) {
     throw "$StepId marketplace inventory contained duplicate plugin entries."
   }
@@ -376,6 +387,7 @@ function Save-StateSnapshot {
   $script:stage = "$StepId-installed-set"
   $installedEntries = @($entries | Where-Object { $_.installed -eq $true })
   $installedNames = @($installedEntries | ForEach-Object { [string]$_.name })
+  $details.diagnostics.lastSnapshot.installedNames = @($installedNames | Sort-Object)
   Assert-SetEqual -Actual $installedNames -Expected $ExpectedInstalled -Label "$StepId installed plugins"
 
   $script:stage = "$StepId-entry-state"
