@@ -118,6 +118,7 @@ function Invoke-CapturedProcess {
 function Invoke-ManualDeviceAuthentication {
     param(
         [Parameter(Mandatory = $true)][string]$CodexCommand,
+        [Parameter(Mandatory = $true)][string]$NodeHome,
         [ValidateRange(1, 3600)][int]$TimeoutSeconds = 900,
         [string]$DesktopPath = [Environment]::GetFolderPath("Desktop")
     )
@@ -129,6 +130,9 @@ function Invoke-ManualDeviceAuthentication {
     if ([string]::IsNullOrWhiteSpace($DesktopPath) -or -not (Test-Path -LiteralPath $DesktopPath -PathType Container)) {
         throw "The Sandbox desktop was unavailable for the manual authentication launcher."
     }
+    if ([string]::IsNullOrWhiteSpace($NodeHome) -or -not (Test-Path -LiteralPath $NodeHome -PathType Container)) {
+        throw "The verified portable Node.js directory was unavailable for manual authentication."
+    }
     $launcherPath = Join-Path $DesktopPath "1-CLICK-HERE-CODEX-AUTHORIZATION.cmd"
     New-Item -ItemType Directory -Force -Path $authRoot | Out-Null
     foreach ($marker in @($sentinelPath, $failureSentinelPath)) {
@@ -138,11 +142,13 @@ function Invoke-ManualDeviceAuthentication {
     }
 
     $escapedCodexCommand = $CodexCommand.Replace("'", "''")
+    $escapedNodeHome = $NodeHome.Replace("'", "''")
     $escapedSentinelPath = $sentinelPath.Replace("'", "''")
     $escapedFailureSentinelPath = $failureSentinelPath.Replace("'", "''")
     $authScript = @"
 `$ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
+`$env:Path = '$escapedNodeHome;' + `$env:Path
 try {
     Write-Host ''
     Write-Host 'MANUAL CODEX DEVICE AUTHENTICATION' -ForegroundColor Yellow
@@ -177,6 +183,7 @@ catch {
 @echo off
 title Codex Device Authentication
 color 0E
+set "PATH=$NodeHome;%PATH%"
 echo Complete the device authorization yourself. This window is not recorded.
 powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "$authScriptPath"
 exit /b %ERRORLEVEL%
@@ -722,7 +729,7 @@ try {
     Write-Host "MANUAL AUTHENTICATION GATE" -ForegroundColor Yellow
     Write-Host "A separate visible terminal will handle Codex device authentication." -ForegroundColor Yellow
     Write-Host "Complete the browser step yourself. No authorization code or account output is written to evidence." -ForegroundColor Yellow
-    Invoke-ManualDeviceAuthentication -CodexCommand $script:CodexCommand
+    Invoke-ManualDeviceAuthentication -CodexCommand $script:CodexCommand -NodeHome $nodeHome
 
     foreach ($plugin in @("context-relay", "execution-budget", "async-wait-guard")) {
         Remove-Plugin -Plugin $plugin
