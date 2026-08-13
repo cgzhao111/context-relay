@@ -151,12 +151,17 @@ Set-StrictMode -Version Latest
 `$env:Path = '$escapedNodeHome;' + `$env:Path
 try {
     Write-Host ''
-    Write-Host 'MANUAL CODEX DEVICE AUTHENTICATION' -ForegroundColor Yellow
-    Write-Host 'Complete the browser authorization yourself. Do not share the one-time code.' -ForegroundColor Yellow
+    Write-Host 'MANUAL CODEX AUTHENTICATION' -ForegroundColor Yellow
+    Write-Host 'First, complete device-code authorization yourself. Do not share the one-time code.' -ForegroundColor Yellow
+    Write-Host 'If device-code authorization is unavailable, this same terminal will fall back to the official browser sign-in.' -ForegroundColor Yellow
     Write-Host 'This terminal and its login output are not redirected to the evidence directory.' -ForegroundColor Yellow
     & '$escapedCodexCommand' login --device-auth
     if (`$LASTEXITCODE -ne 0) {
-        throw 'Device authentication did not complete.'
+        Write-Host 'Device-code authentication did not complete. Starting the official browser sign-in fallback.' -ForegroundColor Yellow
+        & '$escapedCodexCommand' login
+        if (`$LASTEXITCODE -ne 0) {
+            throw 'Neither device-code authentication nor browser authentication completed.'
+        }
     }
     & '$escapedCodexCommand' login status *> `$null
     if (`$LASTEXITCODE -ne 0) {
@@ -181,42 +186,42 @@ catch {
     }
     $launcher = @"
 @echo off
-title Codex Device Authentication
+title Codex Authentication
 color 0E
 set "PATH=$NodeHome;%PATH%"
-echo Complete the device authorization yourself. This window is not recorded.
+echo Complete the Codex authorization yourself. This window is not recorded.
 powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "$authScriptPath"
 exit /b %ERRORLEVEL%
 "@
     Write-Utf8NoBom -Path $launcherPath -Value ($launcher + "`r`n")
 
-    $script:CurrentStage = "manual-device-authentication-await-user"
+    $script:CurrentStage = "manual-codex-authentication-await-user"
     Write-Host "On the Sandbox desktop, double-click: 1-CLICK-HERE-CODEX-AUTHORIZATION.cmd" -ForegroundColor Yellow
-    Write-Host "The run will wait up to $TimeoutSeconds seconds. Device codes and account output are not captured." -ForegroundColor Yellow
+    Write-Host "The run will wait up to $TimeoutSeconds seconds. Device codes, browser-login output, and account output are not captured." -ForegroundColor Yellow
     $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
     while (-not (Test-Path -LiteralPath $sentinelPath -PathType Leaf)) {
         if (Test-Path -LiteralPath $failureSentinelPath -PathType Leaf) {
-            $script:CurrentStage = "manual-device-authentication-user-result"
-            throw "The manual Codex device authentication launcher reported failure."
+            $script:CurrentStage = "manual-codex-authentication-user-result"
+            throw "The manual Codex authentication launcher reported failure after device-code and browser-login attempts."
         }
         if ([DateTime]::UtcNow -ge $deadline) {
-            throw "Manual Codex device authentication timed out after $TimeoutSeconds seconds."
+            throw "Manual Codex authentication timed out after $TimeoutSeconds seconds."
         }
         Start-Sleep -Milliseconds 500
     }
 
-    $script:CurrentStage = "manual-device-authentication-user-result"
+    $script:CurrentStage = "manual-codex-authentication-user-result"
     if ([System.IO.File]::ReadAllText($sentinelPath) -ne "AUTHENTICATED") {
-        throw "Manual Codex device authentication did not produce a valid completion sentinel."
+        throw "Manual Codex authentication did not produce a valid completion sentinel."
     }
 
-    $script:CurrentStage = "manual-device-authentication-parent-status"
+    $script:CurrentStage = "manual-codex-authentication-parent-status"
     & $CodexCommand login status *> $null
     if ($LASTEXITCODE -ne 0) {
         throw "The parent login status check did not confirm authentication."
     }
     Remove-Item -LiteralPath $sentinelPath, $launcherPath -Force
-    $script:CurrentStage = "manual-device-authentication-complete"
+    $script:CurrentStage = "manual-codex-authentication-complete"
 }
 
 function Invoke-CodexJson {
@@ -595,7 +600,7 @@ $summary = [ordered]@{
     repository = $Repository
     repository_commit = $RepositoryCommit
     marketplace_name = $MarketplaceName
-    authentication_gate = "MANUAL_DEVICE_AUTH_NO_TRANSCRIPT"
+    authentication_gate = "MANUAL_DEVICE_THEN_BROWSER_AUTH_NO_TRANSCRIPT"
     automatic_inventory_transition_matrix_verified = $false
     automatic_cache_content_verified = $false
     cache_content_evidence_source = "separate-github-actions-plugin-isolation"
@@ -727,8 +732,8 @@ try {
 
     Write-Host ""
     Write-Host "MANUAL AUTHENTICATION GATE" -ForegroundColor Yellow
-    Write-Host "A separate visible terminal will handle Codex device authentication." -ForegroundColor Yellow
-    Write-Host "Complete the browser step yourself. No authorization code or account output is written to evidence." -ForegroundColor Yellow
+    Write-Host "A separate visible terminal will try Codex device-code authentication, then official browser sign-in if needed." -ForegroundColor Yellow
+    Write-Host "Complete the authorization yourself. No authorization code, browser-login output, or account output is written to evidence." -ForegroundColor Yellow
     Invoke-ManualDeviceAuthentication -CodexCommand $script:CodexCommand -NodeHome $nodeHome
 
     foreach ($plugin in @("context-relay", "execution-budget", "async-wait-guard")) {

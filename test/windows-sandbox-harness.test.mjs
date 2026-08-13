@@ -632,6 +632,12 @@ test("bootstrap pins supply chain, keeps auth interactive, and emits fail-closed
   assert.match(source, /set "PATH=\$NodeHome;%PATH%"/);
   assert.doesNotMatch(source, /Start-Process -FilePath "powershell\.exe"[\s\S]*-WindowStyle Normal -PassThru/);
   assert.match(source, /login --device-auth/);
+  assert.match(source, /Device-code authentication did not complete\. Starting the official browser sign-in fallback\./);
+  assert.match(source, /& '\$escapedCodexCommand' login\s*\r?\n/);
+  assert.match(source, /Neither device-code authentication nor browser authentication completed\./);
+  const deviceLoginIndex = source.indexOf("login --device-auth");
+  const browserFallbackIndex = source.indexOf("& '$escapedCodexCommand' login", deviceLoginIndex + 1);
+  assert.ok(deviceLoginIndex >= 0 && browserFallbackIndex > deviceLoginIndex);
   assert.match(source, /login status \*> `\$null/);
   assert.match(source, /\& \$CodexCommand login status \*> \$null/);
   assert.equal((source.match(/login status \*>/g) ?? []).length, 2);
@@ -639,10 +645,12 @@ test("bootstrap pins supply chain, keeps auth interactive, and emits fail-closed
   assert.ok(
     source.indexOf("login status *> `$null") < source.indexOf("WriteAllText('$escapedSentinelPath', 'AUTHENTICATED')"),
   );
-  assert.match(source, /manual-device-authentication-await-user/);
-  assert.match(source, /manual-device-authentication-user-result/);
-  assert.match(source, /manual-device-authentication-parent-status/);
-  assert.match(source, /Manual Codex device authentication timed out after \$TimeoutSeconds seconds/);
+  assert.match(source, /manual-codex-authentication-await-user/);
+  assert.match(source, /manual-codex-authentication-user-result/);
+  assert.match(source, /manual-codex-authentication-parent-status/);
+  assert.match(source, /Manual Codex authentication timed out after \$TimeoutSeconds seconds/);
+  assert.match(source, /MANUAL_DEVICE_THEN_BROWSER_AUTH_NO_TRANSCRIPT/);
+  assert.match(source, /No authorization code, browser-login output, or account output is written to evidence\./);
   assert.doesNotMatch(source, /login-status-after-manual-gate/);
   assert.doesNotMatch(source, /Start-Transcript/i);
   assert.doesNotMatch(source, /--ignore-user-config/);
@@ -664,7 +672,7 @@ test("bootstrap pins supply chain, keeps auth interactive, and emits fail-closed
   );
 });
 
-test("manual device authentication gate uses a private sentinel and fails closed", windowsOnly, () => {
+test("manual authentication gate falls back to browser login, uses a private sentinel, and fails closed", windowsOnly, () => {
   const directory = fixture("sandbox-manual-auth-gate");
   const source = readFileSync(bootstrap, "utf8");
   const helperStart = source.indexOf("function Invoke-ManualDeviceAuthentication");
@@ -678,7 +686,19 @@ test("manual device authentication gate uses a private sentinel and fails closed
   writeFileSync(fakeCodexSuccess, "@exit /b 0\r\n", "utf8");
   writeFileSync(fakeCodexFailure, "@exit /b 1\r\n", "utf8");
   writeFileSync(fakeCodexNode, '@node "%~dp0fake-codex-node.mjs" %*\r\n', "utf8");
-  writeFileSync(fakeCodexNodeScript, "process.exit(0);\n", "utf8");
+  writeFileSync(fakeCodexNodeScript, [
+    'import { appendFileSync } from "node:fs";',
+    "const args = process.argv.slice(2);",
+    'appendFileSync(process.env.FAKE_CODEX_CALLS, `${args.join(" ")}\\n`, "utf8");',
+    'if (args[0] !== "login") process.exit(2);',
+    'if (args[1] === "--device-auth") {',
+    '  process.exit(["browser-fallback", "double-auth-failure"].includes(process.env.FAKE_CODEX_MODE) ? 1 : 0);',
+    "}",
+    'if (args.length === 1) process.exit(process.env.FAKE_CODEX_MODE === "double-auth-failure" ? 1 : 0);',
+    'if (args[1] === "status") process.exit(0);',
+    "process.exit(2);",
+    "",
+  ].join("\n"), "utf8");
 
   const runCase = (mode, codexCommand = fakeCodexSuccess, timeoutSeconds = 1, nodeHome = dirname(process.execPath)) => {
     const caseRoot = join(directory, mode);
@@ -693,6 +713,8 @@ test("manual device authentication gate uses a private sentinel and fails closed
       "$script:CurrentStage = 'initialize'",
       "$script:TestSleepCount = 0",
       "$env:USERPROFILE = '" + escapedRoot + "'",
+      `$env:FAKE_CODEX_MODE = '${mode}'`,
+      `$env:FAKE_CODEX_CALLS = '${join(caseRoot, "calls.log").replaceAll("'", "''")}'`,
       "function Write-Utf8NoBom { param([string]$Path,[AllowEmptyString()][string]$Value) [IO.File]::WriteAllText($Path,$Value,(New-Object Text.UTF8Encoding($false))) }",
       "function Start-Sleep {",
       "  param([int]$Milliseconds,[int]$Seconds)",
@@ -701,11 +723,11 @@ test("manual device authentication gate uses a private sentinel and fails closed
       `  if ($script:TestSleepCount -eq 1 -and '${mode}' -in @('success','parent-status-failure')) { [IO.File]::WriteAllText((Join-Path $authRoot 'device-authentication-complete.sentinel'),'AUTHENTICATED') }`,
       `  if ($script:TestSleepCount -eq 1 -and '${mode}' -eq 'invalid-sentinel') { [IO.File]::WriteAllText((Join-Path $authRoot 'device-authentication-complete.sentinel'),'INVALID') }`,
       `  if ($script:TestSleepCount -eq 1 -and '${mode}' -eq 'launcher-failure') { [IO.File]::WriteAllText((Join-Path $authRoot 'device-authentication-failed.sentinel'),'FAILED') }`,
-      `  if ($script:TestSleepCount -eq 1 -and '${mode}' -eq 'node-wrapper') {`,
+      `  if ($script:TestSleepCount -eq 1 -and '${mode}' -in @('node-wrapper','browser-fallback','double-auth-failure')) {`,
       "    $savedPath = $env:Path",
       "    $env:Path = (Join-Path $env:SystemRoot 'System32') + ';' + $PSHOME",
       "    & (Join-Path $env:USERPROFILE 'Desktop\\1-CLICK-HERE-CODEX-AUTHORIZATION.cmd') | Out-Null",
-      "    if ($LASTEXITCODE -ne 0) { throw 'Desktop launcher could not find portable Node.js.' }",
+      `    if ('${mode}' -ne 'double-auth-failure' -and $LASTEXITCODE -ne 0) { throw 'Desktop launcher could not find portable Node.js.' }`,
       "    $env:Path = $savedPath",
       "  }",
       `  if ('${mode}' -eq 'timeout') { Microsoft.PowerShell.Utility\\Start-Sleep -Milliseconds 550 }`,
@@ -727,19 +749,35 @@ test("manual device authentication gate uses a private sentinel and fails closed
 
   assert.deepEqual(runCase("success"), {
     result: "ok",
-    stage: "manual-device-authentication-complete",
+    stage: "manual-codex-authentication-complete",
   });
   assert.deepEqual(runCase("node-wrapper", fakeCodexNode), {
     result: "ok",
-    stage: "manual-device-authentication-complete",
+    stage: "manual-codex-authentication-complete",
   });
+  assert.deepEqual(runCase("browser-fallback", fakeCodexNode), {
+    result: "ok",
+    stage: "manual-codex-authentication-complete",
+  });
+  assert.deepEqual(
+    readFileSync(join(directory, "browser-fallback", "calls.log"), "utf8").trim().split(/\r?\n/),
+    ["login --device-auth", "login", "login status", "login status"],
+  );
+  const doubleFailure = runCase("double-auth-failure", fakeCodexNode);
+  assert.equal(doubleFailure.result, "failed");
+  assert.equal(doubleFailure.stage, "manual-codex-authentication-user-result");
+  assert.match(doubleFailure.message, /failure after device-code and browser-login attempts/);
+  assert.deepEqual(
+    readFileSync(join(directory, "double-auth-failure", "calls.log"), "utf8").trim().split(/\r?\n/),
+    ["login --device-auth", "login"],
+  );
   assert.match(runCase("launcher-failure").message, /launcher reported failure/);
   assert.match(runCase("invalid-sentinel").message, /did not produce a valid completion sentinel/);
   const parentFailure = runCase("parent-status-failure", fakeCodexFailure);
-  assert.equal(parentFailure.stage, "manual-device-authentication-parent-status");
+  assert.equal(parentFailure.stage, "manual-codex-authentication-parent-status");
   assert.match(parentFailure.message, /parent login status check did not confirm authentication/);
   const timeout = runCase("timeout");
-  assert.equal(timeout.stage, "manual-device-authentication-await-user");
+  assert.equal(timeout.stage, "manual-codex-authentication-await-user");
   assert.match(timeout.message, /timed out after 1 seconds/);
 });
 
