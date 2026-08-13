@@ -20,12 +20,9 @@ $NodeArchiveSha256 = "1177b4137ba5adaa56354ae40f1080c7450e8ae09cecb47da459d1c52a
 $CodexVersion = "0.144.5"
 $CodexNpmIntegrity = "sha512-jjB+K+OMv572mKhS+2QuLxWXDJNdpwbPenf+V+8bdq7wg4Scqt3cn6WEekD8wPqDVZqck0HSX17K9rD9kbDJQA=="
 $CodexWindowsNpmIntegrity = "sha512-DnsSTlnnzleTxvLwIGnBitKInscxn2I7qASqosS8Fv+qysBygd+ZiBn/SQsRCgQ28PAlsNzmd3Gf3ZTecolAmg=="
-$GitVersion = "2.55.0.windows.4"
-$GitReleaseTag = "v2.55.0.windows.4"
-$MinGitArchiveName = "MinGit-2.55.0.4-64-bit.zip"
-$MinGitArchiveSha256 = "4e03f94c2ffbf70be337e005cee02661c732dbfc81031a078bda9299b9a7d644"
 $Repository = "cgzhao111/context-relay"
 $RepositoryCommit = "dd3cbfb1f10c29808193dee167f4d595e7046f38"
+$RepositoryArchiveSha256 = "2423268ab7a048114506695980bca783cf8f7a943901e669363650aba433caa7"
 $MarketplaceName = "context-relay"
 $script:CurrentStage = "initialize"
 
@@ -488,8 +485,8 @@ $summary = [ordered]@{
     status = "RUNNING"
     node_version = $NodeVersion
     node_archive_sha256 = $NodeArchiveSha256
-    git_version = $GitVersion
-    mingit_archive_sha256 = $MinGitArchiveSha256
+    marketplace_source = "pinned-codeload-archive"
+    repository_archive_sha256 = $RepositoryArchiveSha256
     codex_cli_version = $CodexVersion
     repository = $Repository
     repository_commit = $RepositoryCommit
@@ -515,24 +512,23 @@ try {
         throw "Downloaded partial report helper did not match the host-pinned SHA256."
     }
 
-    $minGitArchive = Join-Path $toolRoot $MinGitArchiveName
-    $minGitUri = "https://github.com/git-for-windows/git/releases/download/$GitReleaseTag/$MinGitArchiveName"
-    Invoke-DownloadWithRetry -Name "download-mingit" -Uri $minGitUri -OutFile $minGitArchive
-    $script:CurrentStage = "verify-mingit"
-    $actualMinGitHash = (Get-FileHash -LiteralPath $minGitArchive -Algorithm SHA256).Hash.ToLowerInvariant()
-    if ($actualMinGitHash -ne $MinGitArchiveSha256) {
-        throw "MinGit archive failed the fixed SHA256 check."
+    $repositoryArchive = Join-Path $toolRoot "context-relay-$RepositoryCommit.zip"
+    $repositoryArchiveUri = "https://codeload.github.com/$Repository/zip/$RepositoryCommit"
+    Invoke-DownloadWithRetry -Name "download-repository-archive" -Uri $repositoryArchiveUri -OutFile $repositoryArchive
+    $script:CurrentStage = "verify-repository-archive"
+    $actualRepositoryArchiveHash = (Get-FileHash -LiteralPath $repositoryArchive -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($actualRepositoryArchiveHash -ne $RepositoryArchiveSha256) {
+        throw "Repository archive failed the fixed SHA256 check."
     }
-    $gitHome = Join-Path $toolRoot "mingit"
-    New-Item -ItemType Directory -Force -Path $gitHome | Out-Null
-    Invoke-CapturedProcess -Name "extract-mingit" -FilePath "tar.exe" -Arguments @(
-        "-xf", $minGitArchive, "-C", $gitHome
+    $repositoryExpanded = Join-Path $toolRoot "repository-source"
+    New-Item -ItemType Directory -Force -Path $repositoryExpanded | Out-Null
+    Invoke-CapturedProcess -Name "extract-repository-archive" -FilePath "tar.exe" -Arguments @(
+        "-xf", $repositoryArchive, "-C", $repositoryExpanded
     ) | Out-Null
-    $env:Path = (Join-Path $gitHome "cmd") + ";" + $env:Path
-    Invoke-CapturedProcess -Name "git-version" -FilePath (Join-Path $gitHome "cmd\git.exe") -Arguments @("--version") | Out-Null
-    $installedGitVersion = ([System.IO.File]::ReadAllText((Join-Path $script:RunRoot "git-version.stdout.private.txt"))).Trim()
-    if ($installedGitVersion -ne "git version $GitVersion") {
-        throw "Installed MinGit version did not match the fixed version."
+    $marketplaceSourceRoot = Join-Path $repositoryExpanded "context-relay-$RepositoryCommit"
+    $marketplaceManifest = Join-Path $marketplaceSourceRoot ".agents\plugins\marketplace.json"
+    if (-not (Test-Path -LiteralPath $marketplaceManifest -PathType Leaf)) {
+        throw "The pinned repository archive did not contain the Marketplace manifest."
     }
 
     $nodeArchive = Join-Path $toolRoot "node.zip"
@@ -592,18 +588,20 @@ try {
     $summary.codex_windows_binary_sha256 = $installedBinaryHash
 
     $marketplace = Invoke-CodexJson -Name "marketplace-add" -Arguments @(
-        "plugin", "marketplace", "add", $Repository, "--ref", $RepositoryCommit, "--json"
+        "plugin", "marketplace", "add", $marketplaceSourceRoot, "--json"
     )
     if ([string]$marketplace.marketplaceName -ne $MarketplaceName -or [bool]$marketplace.alreadyAdded) {
         throw "Marketplace name did not match the fixed expected value."
     }
     $marketplaceRoot = [System.IO.Path]::GetFullPath([string]$marketplace.installedRoot)
     if (-not (Test-Path -LiteralPath $marketplaceRoot -PathType Container)) {
-        throw "The installed marketplace snapshot was not found."
+        throw "The installed Marketplace source root was not found."
     }
-    $resolvedMarketplaceCommit = (& git -C $marketplaceRoot rev-parse HEAD).Trim().ToLowerInvariant()
-    if ($LASTEXITCODE -ne 0 -or $resolvedMarketplaceCommit -ne $RepositoryCommit) {
-        throw "The installed marketplace snapshot did not resolve to the pinned source commit."
+    $installedMarketplaceManifest = Join-Path $marketplaceRoot ".agents\plugins\marketplace.json"
+    if (-not (Test-Path -LiteralPath $installedMarketplaceManifest -PathType Leaf) -or
+        (Get-FileHash -LiteralPath $installedMarketplaceManifest -Algorithm SHA256).Hash -ne
+            (Get-FileHash -LiteralPath $marketplaceManifest -Algorithm SHA256).Hash) {
+        throw "The installed Marketplace manifest did not match the pinned archive source."
     }
 
     Save-Inventory -Name "state-none" -ExpectedInstalled @()

@@ -551,9 +551,11 @@ test("bootstrap pins supply chain, keeps auth interactive, and emits fail-closed
   assert.match(source, /0\.144\.5/);
   assert.match(source, /sha512-jjB\+K\+OMv572mKhS\+2QuLxWXDJNdpwbPenf\+V\+8bdq7wg4Scqt3cn6WEekD8wPqDVZqck0HSX17K9rD9kbDJQA==/);
   assert.match(source, /sha512-DnsSTlnnzleTxvLwIGnBitKInscxn2I7qASqosS8Fv\+qysBygd\+ZiBn\/SQsRCgQ28PAlsNzmd3Gf3ZTecolAmg==/);
-  assert.match(source, /2\.55\.0\.windows\.4/);
-  assert.match(source, /MinGit-2\.55\.0\.4-64-bit\.zip/);
-  assert.match(source, /4e03f94c2ffbf70be337e005cee02661c732dbfc81031a078bda9299b9a7d644/);
+  assert.match(source, /2423268ab7a048114506695980bca783cf8f7a943901e669363650aba433caa7/);
+  assert.match(source, /codeload\.github\.com\/\$Repository\/zip\/\$RepositoryCommit/);
+  assert.match(source, /extract-repository-archive/);
+  assert.match(source, /pinned repository archive did not contain the Marketplace manifest/);
+  assert.doesNotMatch(source, /MinGit|download-mingit|extract-mingit|git version \$GitVersion/);
   assert.match(source, /function Invoke-DownloadWithRetry/);
   assert.match(source, /\$Uri\.Scheme -ne \[Uri\]::UriSchemeHttps/);
   assert.match(source, /function Remove-DownloadArtifact/);
@@ -569,9 +571,7 @@ test("bootstrap pins supply chain, keeps auth interactive, and emits fail-closed
   assert.doesNotMatch(source, /\.Contains\(\$_, \[System\.StringComparison\]::Ordinal\)/);
   assert.equal((source.match(/Invoke-WebRequest -UseBasicParsing/g) ?? []).length, 1);
   assert.doesNotMatch(source, /Expand-Archive/);
-  assert.match(source, /Invoke-CapturedProcess -Name "extract-mingit" -FilePath "tar\.exe"/);
   assert.match(source, /Invoke-CapturedProcess -Name "extract-node" -FilePath "tar\.exe"/);
-  assert.match(source, /git version \$GitVersion/);
   assert.match(source, /dd3cbfb1f10c29808193dee167f4d595e7046f38/);
   assert.match(source, /ComputeHash\(\$stream\)/);
   assert.match(source, /dist\.integrity/);
@@ -579,7 +579,7 @@ test("bootstrap pins supply chain, keeps auth interactive, and emits fail-closed
   assert.match(source, /\$marketplace\.marketplaceName -ne \$MarketplaceName/);
   assert.match(source, /\[bool\]\$marketplace\.alreadyAdded/);
   assert.doesNotMatch(source, /\$marketplace\.name/);
-  assert.match(source, /resolvedMarketplaceCommit -ne \$RepositoryCommit/);
+  assert.match(source, /installed Marketplace manifest did not match the pinned archive source/i);
   assert.match(source, /unexpected plugin installation identity, version, or cache path/);
   assert.match(source, /unexpected plugin removal identity/);
   assert.match(source, /automatic_inventory_transition_matrix_verified = \$true/);

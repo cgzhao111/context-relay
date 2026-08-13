@@ -25,10 +25,14 @@ profile.
 - `@openai/codex` `0.144.5`
 - Windows x64 Codex payload integrity
   `sha512-DnsSTlnnzleTxvLwIGnBitKInscxn2I7qASqosS8Fv+qysBygd+ZiBn/SQsRCgQ28PAlsNzmd3Gf3ZTecolAmg==`
-- MinGit `2.55.0.windows.4`, archive SHA256
-  `4e03f94c2ffbf70be337e005cee02661c732dbfc81031a078bda9299b9a7d644`
 - `cgzhao111/context-relay` commit
   `dd3cbfb1f10c29808193dee167f4d595e7046f38`
+- that commit's codeload ZIP SHA256
+  `2423268ab7a048114506695980bca783cf8f7a943901e669363650aba433caa7`
+
+The Sandbox runtime layer installs the Marketplace from the checksum-pinned
+commit archive. The separate GitHub Actions layer verifies the remote Git
+Marketplace path, exact source/cache trees, and independent removal behavior.
 
 ## Host commands
 
