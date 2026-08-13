@@ -105,6 +105,8 @@ test("harness refuses CODEX_HOME overrides and emits bounded evidence", () => {
   assert.match(harness, /treeSha256 = \$cacheTree\.treeSha256/);
   assert.match(harness, /Plugin cache content did not match the pinned source tree/);
   assert.match(harness, /MATRIX_FAILED/);
+  assert.match(harness, /\(\[DateTimeOffset\]\$details\.completedAt\)\.ToUniversalTime\(\)\.ToString\('o'\)/);
+  assert.match(harness, /\$script:stage = "\$StepId-cache-namespace"/);
   assert.doesNotMatch(harness, /Set-Content[^\r\n]*(?:\$stdout|\$stderr)/i);
   const evidenceProjection = harness.slice(
     harness.indexOf("$sanitizedEntries ="),

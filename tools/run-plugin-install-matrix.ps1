@@ -363,18 +363,22 @@ function Save-StateSnapshot {
     [string[]]$ExpectedInstalled
   )
 
+  $script:stage = "$StepId-listing"
   $listing = Get-MarketplaceListing
   $entries = @(Get-PluginEntries -Listing $listing)
+  $script:stage = "$StepId-marketplace-inventory"
   $entryNames = @($entries | ForEach-Object { [string]$_.name })
   Assert-SetEqual -Actual $entryNames -Expected $pluginNames -Label "$StepId marketplace inventory"
   if (($entryNames | Group-Object | Where-Object Count -ne 1).Count -ne 0) {
     throw "$StepId marketplace inventory contained duplicate plugin entries."
   }
 
+  $script:stage = "$StepId-installed-set"
   $installedEntries = @($entries | Where-Object { $_.installed -eq $true })
   $installedNames = @($installedEntries | ForEach-Object { [string]$_.name })
   Assert-SetEqual -Actual $installedNames -Expected $ExpectedInstalled -Label "$StepId installed plugins"
 
+  $script:stage = "$StepId-entry-state"
   foreach ($entry in $entries) {
     $shouldBeInstalled = $ExpectedInstalled -contains [string]$entry.name
     if ([bool]$entry.installed -ne $shouldBeInstalled) {
@@ -388,6 +392,7 @@ function Save-StateSnapshot {
     }
   }
 
+  $script:stage = "$StepId-cache-state"
   $cacheStates = @($pluginNames | ForEach-Object {
     Get-CacheState `
       -PluginName $_ `
@@ -397,6 +402,7 @@ function Save-StateSnapshot {
   $cachedNames = @($cacheStates | Where-Object present | ForEach-Object { [string]$_.name })
   Assert-SetEqual -Actual $cachedNames -Expected $ExpectedInstalled -Label "$StepId cached plugins"
 
+  $script:stage = "$StepId-cache-namespace"
   $namespaceDirectories = if (Test-Path -LiteralPath $cacheNamespace -PathType Container) {
     @(Get-ChildItem -LiteralPath $cacheNamespace -Directory -Force | ForEach-Object { $_.Name })
   }
@@ -405,6 +411,7 @@ function Save-StateSnapshot {
   }
   Assert-SetEqual -Actual $namespaceDirectories -Expected $ExpectedInstalled -Label "$StepId cache namespace"
 
+  $script:stage = "$StepId-record"
   $sanitizedEntries = @($entries | Sort-Object name | ForEach-Object {
     [ordered]@{
       pluginId = [string]$_.pluginId
@@ -495,7 +502,7 @@ try {
   }
   $details.marketplace.sourceCommitVerified = $true
 
-  $stage = 'initial-state'
+  $stage = 'initial-listing'
   $initialListing = Get-MarketplaceListing
   foreach ($entry in @(Get-PluginEntries -Listing $initialListing)) {
     if (-not $entry.version) {
@@ -504,9 +511,11 @@ try {
     $details.marketplace.pluginVersions[[string]$entry.name] = [string]$entry.version
   }
   foreach ($plugin in $pluginNames) {
+    $stage = "source-tree-$plugin"
     $sourcePluginRoot = Join-Path $marketplaceRoot (Join-Path 'plugins' $plugin)
     $details.marketplace.sourceTrees[$plugin] = Get-PluginTree -Root $sourcePluginRoot
   }
+  $stage = 'initial-state-snapshot'
   Save-StateSnapshot -StepId 'initial-none-installed' -ExpectedInstalled @()
 
   foreach ($plugin in $pluginNames) {
@@ -621,7 +630,7 @@ finally {
   $report = [ordered]@{
     schema_version = '1.0.0'
     report_id = 'gha-plugin-install-matrix'
-    tested_at = [string]$details.completedAt
+    tested_at = ([DateTimeOffset]$details.completedAt).ToUniversalTime().ToString('o')
     reporter_kind = 'automation'
     plugin = [ordered]@{
       id = 'bundle'
