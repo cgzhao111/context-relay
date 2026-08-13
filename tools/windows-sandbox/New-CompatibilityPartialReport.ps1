@@ -39,6 +39,19 @@ function Write-Utf8NoBom {
     [System.IO.File]::WriteAllText($Path, $Value, $encoding)
 }
 
+function Get-Sha256Hex {
+    param([Parameter(Mandatory = $true)][string]$Path)
+    $stream = [System.IO.File]::OpenRead($Path)
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        return ([BitConverter]::ToString($sha256.ComputeHash($stream))).Replace("-", "").ToLowerInvariant()
+    }
+    finally {
+        $sha256.Dispose()
+        $stream.Dispose()
+    }
+}
+
 $review = [System.IO.Path]::GetFullPath($ReviewStatusPath)
 if (-not (Test-Path -LiteralPath $review -PathType Leaf)) {
     throw "Review status artifact does not exist."
@@ -56,7 +69,7 @@ $evidenceDirectory = Join-Path $output "evidence"
 New-Item -ItemType Directory -Path $evidenceDirectory -Force | Out-Null
 $reviewCopy = Join-Path $evidenceDirectory "review-status.json"
 Copy-Item -LiteralPath $review -Destination $reviewCopy
-$digest = (Get-FileHash -LiteralPath $reviewCopy -Algorithm SHA256).Hash.ToLowerInvariant()
+$digest = Get-Sha256Hex -Path $reviewCopy
 
 $report = [ordered]@{
     schema_version = "1.0.0"
