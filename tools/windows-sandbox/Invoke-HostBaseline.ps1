@@ -67,13 +67,66 @@ $unchanged = [string]::Equals(
     [System.StringComparison]::OrdinalIgnoreCase
 )
 
-$baselineInstalled = @($baseline.inventory.installed | ForEach-Object { [string]$_.plugin_id })
-$currentInstalled = @($currentInventory.installed | ForEach-Object { [string]$_.plugin_id })
-$changedPluginIds = @(
-    Compare-Object -ReferenceObject $baselineInstalled -DifferenceObject $currentInstalled |
-        ForEach-Object { [string]$_.InputObject } |
-        Sort-Object -Unique
-)
+$baselineStateById = @{}
+foreach ($record in @($baseline.inventory.installed)) {
+    $baselineStateById[[string]$record.plugin_id] = [ordered]@{
+        version = [string]$record.version
+        installed = $true
+        enabled = [bool]$record.enabled
+    }
+}
+foreach ($record in @($baseline.inventory.target_plugins)) {
+    $baselineStateById[[string]$record.plugin_id] = [ordered]@{
+        version = [string]$record.version
+        installed = [bool]$record.installed
+        enabled = [bool]$record.enabled
+    }
+}
+
+$currentStateById = @{}
+foreach ($record in @($currentInventory.installed)) {
+    $currentStateById[[string]$record.plugin_id] = [ordered]@{
+        version = [string]$record.version
+        installed = $true
+        enabled = [bool]$record.enabled
+    }
+}
+foreach ($record in @($currentInventory.target_plugins)) {
+    $currentStateById[[string]$record.plugin_id] = [ordered]@{
+        version = [string]$record.version
+        installed = [bool]$record.installed
+        enabled = [bool]$record.enabled
+    }
+}
+
+$allPluginIds = @($baselineStateById.Keys) + @($currentStateById.Keys) | Sort-Object -Unique
+$changedPluginStates = @($allPluginIds | ForEach-Object {
+    $pluginId = [string]$_
+    $hasBaseline = $baselineStateById.ContainsKey($pluginId)
+    $hasCurrent = $currentStateById.ContainsKey($pluginId)
+    $baselineState = if ($hasBaseline) { $baselineStateById[$pluginId] } else { $null }
+    $currentState = if ($hasCurrent) { $currentStateById[$pluginId] } else { $null }
+    $changed = -not $hasBaseline -or -not $hasCurrent
+    if ($hasBaseline -and $hasCurrent) {
+        $changed =
+            -not [string]::Equals([string]$baselineState.version, [string]$currentState.version, [System.StringComparison]::Ordinal) -or
+            [bool]$baselineState.installed -ne [bool]$currentState.installed -or
+            [bool]$baselineState.enabled -ne [bool]$currentState.enabled
+    }
+    if ($changed) {
+        [ordered]@{
+            plugin_id = $pluginId
+            change_type = if (-not $hasBaseline) { "added" } elseif (-not $hasCurrent) { "removed" } else { "modified" }
+            baseline_version = if ($hasBaseline) { [string]$baselineState.version } else { $null }
+            current_version = if ($hasCurrent) { [string]$currentState.version } else { $null }
+            baseline_installed = if ($hasBaseline) { [bool]$baselineState.installed } else { $null }
+            current_installed = if ($hasCurrent) { [bool]$currentState.installed } else { $null }
+            baseline_enabled = if ($hasBaseline) { [bool]$baselineState.enabled } else { $null }
+            current_enabled = if ($hasCurrent) { [bool]$currentState.enabled } else { $null }
+        }
+    }
+})
+$changedPluginIds = @($changedPluginStates | ForEach-Object { [string]$_.plugin_id })
 
 $comparison = [ordered]@{
     schema_version = "1.0"
@@ -83,6 +136,7 @@ $comparison = [ordered]@{
     baseline_inventory_sha256 = [string]$baseline.inventory_sha256
     current_inventory_sha256 = $currentHash
     changed_plugin_ids = $changedPluginIds
+    changed_plugin_states = $changedPluginStates
     note = "This read-only comparison does not establish causality; it only compares normalized host plugin inventory before and after the isolated run."
 }
 Write-Utf8NoBom -Path $resolvedReport -Value (($comparison | ConvertTo-Json -Depth 8) + "`n")
