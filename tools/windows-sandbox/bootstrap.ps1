@@ -81,11 +81,18 @@ function Get-TargetPluginState {
         ForEach-Object {
             [ordered]@{
                 plugin_id = [string]$_.pluginId
+                marketplace_name = [string]$_.marketplaceName
                 version = [string]$_.version
                 installed = [bool]$_.installed
                 enabled = [bool]$_.enabled
             }
         } | Sort-Object plugin_id)
+}
+
+function Get-ExpectedPluginVersion {
+    param([string]$Plugin)
+    if ($Plugin -eq "context-relay") { return "0.3.0-rc.2" }
+    return "0.1.0"
 }
 
 function Assert-InstalledSet {
@@ -99,11 +106,20 @@ function Assert-InstalledSet {
     if (($actual -join "|") -ne ($expected -join "|")) {
         throw "Installed target plugin set did not match the expected isolation state."
     }
+    foreach ($state in $states) {
+        $plugin = ([string]$state.plugin_id).Split("@")[0]
+        $shouldBeInstalled = $ExpectedInstalled -contains $plugin
+        if ([string]$state.marketplace_name -ne $MarketplaceName -or
+            [string]$state.version -ne (Get-ExpectedPluginVersion -Plugin $plugin) -or
+            [bool]$state.enabled -ne $shouldBeInstalled) {
+            throw "A target plugin list entry did not match its marketplace, version, or enabled-state contract."
+        }
+    }
 }
 
 function Save-Inventory {
     param([string]$Name, [string[]]$ExpectedInstalled)
-    $inventory = Invoke-CodexJson -Name $Name -Arguments @("plugin", "list", "--available", "--json")
+    $inventory = Invoke-CodexJson -Name $Name -Arguments @("plugin", "list", "--marketplace", $MarketplaceName, "--available", "--json")
     Assert-InstalledSet -Inventory $inventory -ExpectedInstalled $ExpectedInstalled
     Write-JsonEvidence -Name ($Name + ".normalized.private.json") -Value ([ordered]@{
         schema_version = "1.0"
@@ -159,12 +175,24 @@ function Invoke-RemovedPluginNegativeProbe {
 
 function Add-Plugin {
     param([string]$Plugin)
-    Invoke-CodexJson -Name ("add-" + $Plugin) -Arguments @("plugin", "add", "$Plugin@$MarketplaceName", "--json") | Out-Null
+    $result = Invoke-CodexJson -Name ("add-" + $Plugin) -Arguments @("plugin", "add", "$Plugin@$MarketplaceName", "--json")
+    $expectedVersion = Get-ExpectedPluginVersion -Plugin $Plugin
+    $expectedPath = [System.IO.Path]::GetFullPath((Join-Path $env:USERPROFILE ".codex\plugins\cache\$MarketplaceName\$Plugin\$expectedVersion")).TrimEnd('\')
+    $actualPath = [System.IO.Path]::GetFullPath([string]$result.installedPath).TrimEnd('\')
+    if ([string]$result.pluginId -ne "$Plugin@$MarketplaceName" -or
+        [string]$result.name -ne $Plugin -or
+        [string]$result.version -ne $expectedVersion -or
+        $actualPath -ne $expectedPath) {
+        throw "Codex returned an unexpected plugin installation identity, version, or cache path."
+    }
 }
 
 function Remove-Plugin {
     param([string]$Plugin)
-    Invoke-CodexJson -Name ("remove-" + $Plugin) -Arguments @("plugin", "remove", "$Plugin@$MarketplaceName", "--json") | Out-Null
+    $result = Invoke-CodexJson -Name ("remove-" + $Plugin) -Arguments @("plugin", "remove", "$Plugin@$MarketplaceName", "--json")
+    if ([string]$result.pluginId -ne "$Plugin@$MarketplaceName" -or [string]$result.name -ne $Plugin) {
+        throw "Codex returned an unexpected plugin removal identity."
+    }
 }
 
 function Invoke-PrivateRuntimeProbe {
@@ -404,7 +432,9 @@ $summary = [ordered]@{
     repository_commit = $RepositoryCommit
     marketplace_name = $MarketplaceName
     authentication_gate = "MANUAL_DEVICE_AUTH_NO_TRANSCRIPT"
-    automatic_install_matrix_verified = $false
+    automatic_inventory_transition_matrix_verified = $false
+    automatic_cache_content_verified = $false
+    cache_content_evidence_source = "separate-github-actions-plugin-isolation"
     runtime_probes_executed = $false
     runtime_probes_human_review_required = $true
     actual_async_host_wait_verified = $false
@@ -498,8 +528,16 @@ try {
     $marketplace = Invoke-CodexJson -Name "marketplace-add" -Arguments @(
         "plugin", "marketplace", "add", $Repository, "--ref", $RepositoryCommit, "--json"
     )
-    if ([string]$marketplace.name -ne $MarketplaceName) {
+    if ([string]$marketplace.marketplaceName -ne $MarketplaceName -or [bool]$marketplace.alreadyAdded) {
         throw "Marketplace name did not match the fixed expected value."
+    }
+    $marketplaceRoot = [System.IO.Path]::GetFullPath([string]$marketplace.installedRoot)
+    if (-not (Test-Path -LiteralPath $marketplaceRoot -PathType Container)) {
+        throw "The installed marketplace snapshot was not found."
+    }
+    $resolvedMarketplaceCommit = (& git -C $marketplaceRoot rev-parse HEAD).Trim().ToLowerInvariant()
+    if ($LASTEXITCODE -ne 0 -or $resolvedMarketplaceCommit -ne $RepositoryCommit) {
+        throw "The installed marketplace snapshot did not resolve to the pinned source commit."
     }
 
     Save-Inventory -Name "state-none" -ExpectedInstalled @()
@@ -517,7 +555,7 @@ try {
     Save-Inventory -Name "state-after-independent-remove-execution-budget" -ExpectedInstalled @("context-relay", "async-wait-guard")
     Add-Plugin -Plugin "execution-budget"
 
-    $summary.automatic_install_matrix_verified = $true
+    $summary.automatic_inventory_transition_matrix_verified = $true
 
     Write-Host ""
     Write-Host "MANUAL AUTHENTICATION GATE" -ForegroundColor Yellow
