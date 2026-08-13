@@ -54,6 +54,22 @@ any artifact is uploaded; a privacy-scan failure uploads nothing.
 This layer proves only installation state, cache separation, and removal on
 the named runner. It does not prove Skill discovery or model behavior.
 
+### Published Layer 1 result
+
+The first Layer 1 run passed on 2026-08-12:
+
+- workflow: [GitHub Actions run 31612238486](https://github.com/cgzhao111/context-relay/actions/runs/31612238486);
+- plugin revision: `dd3cbfb1f10c29808193dee167f4d595e7046f38`;
+- harness revision: `a99863e363352224bd588b9f4d4e7d6f0ff38cfa`;
+- Codex CLI: `0.144.5` on `windows-latest`;
+- result: all eleven initial, single-plugin, combined, and independent-removal
+  states passed, including exact source/cache tree comparison;
+- durable evidence:
+  [`evaluation/compatibility/runs/gha-windows-dd3cbfb1-20260812/`](../evaluation/compatibility/runs/gha-windows-dd3cbfb1-20260812/).
+
+The report and all linked evidence pass the strict report validator and public
+evidence scanner. This result does not upgrade any Layer 2 assertion.
+
 ## Layer 2: Windows Sandbox runtime
 
 Windows Sandbox is a disposable Windows environment. The supplied `.wsb`
@@ -171,6 +187,9 @@ Do not install or remove plugins in the normal host merely to create evidence.
 
 ## Current scope
 
-The first run certifies Windows Codex CLI only. Codex Desktop, macOS, Linux,
-implicit Skill triggering, complete hidden task history, and a fixed percentage
-of Token savings remain unverified unless a later report tests them directly.
+Layer 1 now certifies Marketplace installation, list state, cache content, and
+independent removal for the pinned revision on Windows Codex CLI `0.144.5`.
+Layer 2 fresh-task Skill visibility and explicit invocation still require the
+Windows Sandbox run. Codex Desktop, macOS, Linux, implicit Skill triggering,
+complete hidden task history, and a fixed percentage of Token savings remain
+unverified unless a later report tests them directly.

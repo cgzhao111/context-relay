@@ -11,17 +11,6 @@ on:
       - plugins/**
       - package.json
       - package-lock.json
-  push:
-    branches:
-      - codex/runtime-evidence
-    paths:
-      - .github/workflows/plugin-isolation.yml
-      - tools/run-plugin-install-matrix.ps1
-      - evaluation/compatibility/**
-      - .agents/plugins/marketplace.json
-      - plugins/**
-      - package.json
-      - package-lock.json
   workflow_dispatch:
     inputs:
       source_commit:

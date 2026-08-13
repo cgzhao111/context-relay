@@ -29,8 +29,8 @@ function runTreeProbe(scriptPath, sourcePath, cachePath) {
 
 test("Windows evidence workflow pins the source and executable toolchain", () => {
   assert.match(workflow, /pull_request:\s*[\s\S]*paths:/);
-  assert.match(workflow, /push:\s*[\s\S]*codex\/runtime-evidence/);
   assert.match(workflow, /workflow_dispatch:/);
+  assert.doesNotMatch(workflow, /\n\s*push:/);
   assert.match(workflow, /runs-on:\s*windows-latest/);
   assert.match(workflow, /NODE_VERSION:\s*22\.23\.2/);
   assert.match(workflow, /CODEX_CLI_VERSION:\s*0\.144\.5/);

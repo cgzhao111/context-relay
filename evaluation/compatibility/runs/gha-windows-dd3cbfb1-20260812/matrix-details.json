@@ -1,0 +1,1486 @@
+{
+  "schemaVersion": "1.0.0",
+  "evidenceType": "codex-plugin-installation-isolation",
+  "status": "passed",
+  "startedAt": "2026-08-12T15:26:19.7219808+00:00",
+  "completedAt": "2026-08-12T15:26:24.2667523+00:00",
+  "source": {
+    "repository": "https://github.com/cgzhao111/context-relay",
+    "commit": "dd3cbfb1f10c29808193dee167f4d595e7046f38"
+  },
+  "environment": {
+    "os": "Windows",
+    "nodeVersion": "v22.23.2",
+    "codexCliVersion": "codex-cli 0.144.5"
+  },
+  "boundaries": {
+    "codexHomeOverrideUsed": false,
+    "loginUsed": false,
+    "runtimeTriggerVerified": false,
+    "verifiedClaims": [
+      "marketplace-source-commit",
+      "plugin-list-state",
+      "plugin-cache-state",
+      "independent-plugin-removal"
+    ]
+  },
+  "marketplace": {
+    "name": "context-relay",
+    "sourceCommitVerified": true,
+    "pluginVersions": {
+      "context-relay": "0.3.0-rc.2",
+      "execution-budget": "0.1.0",
+      "async-wait-guard": "0.1.0"
+    },
+    "sourceTrees": {
+      "context-relay": {
+        "treeSha256": "32fa21b085ce90f8bc0148b4ffae87af9e0e95c9ed436678f7b2742cb769908b",
+        "fileCount": 8,
+        "files": [
+          {
+            "path": ".codex-plugin/plugin.json",
+            "bytes": 1449,
+            "sha256": "71379aaa91e60c67439edf6ff8cd8b2f36869e725b86b3f3da73011e28870f30"
+          },
+          {
+            "path": "skills/project-handoff/SKILL.md",
+            "bytes": 7736,
+            "sha256": "f7cc358a2c457dd39668b1e3580591a671f54a623b4b51b67b5e09022f3adf48"
+          },
+          {
+            "path": "skills/project-handoff/agents/openai.yaml",
+            "bytes": 212,
+            "sha256": "5dc11cecf46183e9807e6a477060f8d810fc829807eef658c101d9d9971ddf34"
+          },
+          {
+            "path": "skills/project-handoff/assets/HANDOFF.md",
+            "bytes": 2040,
+            "sha256": "30053bbf4b941b284668eeb69cc8bd56d565dfa328fd62a0e24252d53319d197"
+          },
+          {
+            "path": "skills/project-handoff/references/handoff.schema.json",
+            "bytes": 10963,
+            "sha256": "78857bfa9d6cd0398d4825c045e38901221edfa46df033c60fcbd3becc0df0ac"
+          },
+          {
+            "path": "skills/project-handoff/references/protocol.md",
+            "bytes": 7339,
+            "sha256": "d911a08dc4b4d85eddf7d08b1060c4817ab8892701e50582fac2e0a25eb03326"
+          },
+          {
+            "path": "skills/project-handoff/scripts/snapshot-workspace.mjs",
+            "bytes": 6971,
+            "sha256": "feb8b03fba195cd09994797d5a8eacb1e7e4925b0165bc6e6b63b888b3c974ee"
+          },
+          {
+            "path": "skills/project-handoff/scripts/validate-handoff.mjs",
+            "bytes": 40638,
+            "sha256": "0c80c5cd8e5b655286577ddcb24638d8284af9adea8beba5888b5cf3766c5c3d"
+          }
+        ]
+      },
+      "execution-budget": {
+        "treeSha256": "ca5c2f3bca4275bd8893e0f6cf5e7e1a0821003ee520be5933b9f31e9ae66010",
+        "fileCount": 13,
+        "files": [
+          {
+            "path": ".codex-plugin/plugin.json",
+            "bytes": 1581,
+            "sha256": "9d3a69700d2e0d95d3b4638f9e42ada9a2a9ce2b093384fe38f35b45e34a7fad"
+          },
+          {
+            "path": "examples/README.md",
+            "bytes": 653,
+            "sha256": "2fe1c1f72624b5edbb834b753a68ec8ce92c0535f238ec3430b9225fbd2c6fc3"
+          },
+          {
+            "path": "examples/request.json",
+            "bytes": 848,
+            "sha256": "fdc6c64ec51294c6311e2483ecb878097fd9c7b5887c45e50febdabb839853c3"
+          },
+          {
+            "path": "examples/runs.jsonl",
+            "bytes": 2115,
+            "sha256": "7340a233689104d7a998a4dcf90a6a102db4726cba75d673d61faef9876f3de9"
+          },
+          {
+            "path": "skills/execution-budget/SKILL.md",
+            "bytes": 6600,
+            "sha256": "f53c2d12c8c762a19c9888b15b1dbbbce765cbacaa3cd116ea3e078089e10ca8"
+          },
+          {
+            "path": "skills/execution-budget/agents/openai.yaml",
+            "bytes": 253,
+            "sha256": "08ca00acdc8c5f55e81e6f8659f42a3f7832e3c2c4adbf857d40e2d55ea4fabb"
+          },
+          {
+            "path": "skills/execution-budget/references/calibration.schema.json",
+            "bytes": 6049,
+            "sha256": "cd7a3d2eb464c68b5759f4cfe850c1589a11281413c6bf2ecbe5882a9224b3d1"
+          },
+          {
+            "path": "skills/execution-budget/references/execution-budget.schema.json",
+            "bytes": 4994,
+            "sha256": "6dd83e1bae48a392593d794bd09a5c33b84ef86e0dfb8922a6202c79cd0500dc"
+          },
+          {
+            "path": "skills/execution-budget/references/protocol.md",
+            "bytes": 4935,
+            "sha256": "a88f3e707b10683c1a1ea8346c26cc7609f935ca160ccd6c6b9434f4d081c9c6"
+          },
+          {
+            "path": "skills/execution-budget/references/request.schema.json",
+            "bytes": 4773,
+            "sha256": "d8e70dbdabc76c293b6c573f03d18c4959be23da0449b684fee94feedde236ff"
+          },
+          {
+            "path": "skills/execution-budget/references/run-record.schema.json",
+            "bytes": 2083,
+            "sha256": "001eccd854a07a0326c3de9884ce051d4368538aa2d0a1668904a6750d781874"
+          },
+          {
+            "path": "skills/execution-budget/scripts/calibrate-budget.mjs",
+            "bytes": 10486,
+            "sha256": "49146374a85c7ce69f66f5948cb367273ba160be1675a753cdf1a4893fc4132d"
+          },
+          {
+            "path": "skills/execution-budget/scripts/estimate-budget.mjs",
+            "bytes": 25021,
+            "sha256": "f5d93953432629def1f931256e4b91cd0709d2672aa5a6b4709f9659fba3359d"
+          }
+        ]
+      },
+      "async-wait-guard": {
+        "treeSha256": "690fd359cf66b88877eea23b289c843dc7b061cbf4c3c4e009e96b30fb7cd24e",
+        "fileCount": 5,
+        "files": [
+          {
+            "path": ".codex-plugin/plugin.json",
+            "bytes": 1404,
+            "sha256": "6e65f0de5fdf4f062bf95ee7eb6713dc6f6ab119967b25355de926dc7cc55849"
+          },
+          {
+            "path": "skills/async-wait-guard/SKILL.md",
+            "bytes": 3439,
+            "sha256": "ae1beaef8f4a39d7756e4be4ef26220560c36ab88ed40c8a698a36756aa99842"
+          },
+          {
+            "path": "skills/async-wait-guard/agents/openai.yaml",
+            "bytes": 268,
+            "sha256": "d4779432dd809323f7482ee982d5baf85121f354b83a5441b1873e04f16f7d7b"
+          },
+          {
+            "path": "skills/async-wait-guard/references/policy.md",
+            "bytes": 3797,
+            "sha256": "dcffa52337cc8ed8e1318346f5acebeacc37f3ab30ce3cbdaf127cc6801c4b17"
+          },
+          {
+            "path": "skills/async-wait-guard/scripts/plan-wait.mjs",
+            "bytes": 5499,
+            "sha256": "b1b4f2ef610017c86126586e0893b9e2c394a469164e7c015599693c7879a7d4"
+          }
+        ]
+      }
+    }
+  },
+  "diagnostics": {
+    "lastSnapshot": {
+      "stepId": "removed-context-relay-independently",
+      "entryNames": [
+        "async-wait-guard",
+        "context-relay",
+        "execution-budget"
+      ],
+      "entryCount": 3,
+      "uniqueEntryCount": 3,
+      "installedNames": [],
+      "cacheNamespaceEntries": []
+    }
+  },
+  "steps": [
+    {
+      "id": "initial-none-installed",
+      "expectedInstalled": [],
+      "list": [
+        {
+          "pluginId": "async-wait-guard@context-relay",
+          "name": "async-wait-guard",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "context-relay@context-relay",
+          "name": "context-relay",
+          "marketplaceName": "context-relay",
+          "version": "0.3.0-rc.2",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "execution-budget@context-relay",
+          "name": "execution-budget",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        }
+      ],
+      "cache": [
+        {
+          "name": "context-relay",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        },
+        {
+          "name": "execution-budget",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        },
+        {
+          "name": "async-wait-guard",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        }
+      ],
+      "assertions": [
+        "complete-marketplace-inventory",
+        "exact-installed-set",
+        "exact-cache-set"
+      ]
+    },
+    {
+      "id": "single-context-relay-installed",
+      "expectedInstalled": [
+        "context-relay"
+      ],
+      "list": [
+        {
+          "pluginId": "async-wait-guard@context-relay",
+          "name": "async-wait-guard",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "context-relay@context-relay",
+          "name": "context-relay",
+          "marketplaceName": "context-relay",
+          "version": "0.3.0-rc.2",
+          "installed": true,
+          "enabled": true,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "execution-budget@context-relay",
+          "name": "execution-budget",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        }
+      ],
+      "cache": [
+        {
+          "name": "context-relay",
+          "present": true,
+          "fileCount": 8,
+          "skillCount": 1,
+          "manifestSha256": "71379aaa91e60c67439edf6ff8cd8b2f36869e725b86b3f3da73011e28870f30",
+          "treeSha256": "32fa21b085ce90f8bc0148b4ffae87af9e0e95c9ed436678f7b2742cb769908b",
+          "contentMatchesSource": true,
+          "files": [
+            {
+              "path": ".codex-plugin/plugin.json",
+              "bytes": 1449,
+              "sha256": "71379aaa91e60c67439edf6ff8cd8b2f36869e725b86b3f3da73011e28870f30"
+            },
+            {
+              "path": "skills/project-handoff/SKILL.md",
+              "bytes": 7736,
+              "sha256": "f7cc358a2c457dd39668b1e3580591a671f54a623b4b51b67b5e09022f3adf48"
+            },
+            {
+              "path": "skills/project-handoff/agents/openai.yaml",
+              "bytes": 212,
+              "sha256": "5dc11cecf46183e9807e6a477060f8d810fc829807eef658c101d9d9971ddf34"
+            },
+            {
+              "path": "skills/project-handoff/assets/HANDOFF.md",
+              "bytes": 2040,
+              "sha256": "30053bbf4b941b284668eeb69cc8bd56d565dfa328fd62a0e24252d53319d197"
+            },
+            {
+              "path": "skills/project-handoff/references/handoff.schema.json",
+              "bytes": 10963,
+              "sha256": "78857bfa9d6cd0398d4825c045e38901221edfa46df033c60fcbd3becc0df0ac"
+            },
+            {
+              "path": "skills/project-handoff/references/protocol.md",
+              "bytes": 7339,
+              "sha256": "d911a08dc4b4d85eddf7d08b1060c4817ab8892701e50582fac2e0a25eb03326"
+            },
+            {
+              "path": "skills/project-handoff/scripts/snapshot-workspace.mjs",
+              "bytes": 6971,
+              "sha256": "feb8b03fba195cd09994797d5a8eacb1e7e4925b0165bc6e6b63b888b3c974ee"
+            },
+            {
+              "path": "skills/project-handoff/scripts/validate-handoff.mjs",
+              "bytes": 40638,
+              "sha256": "0c80c5cd8e5b655286577ddcb24638d8284af9adea8beba5888b5cf3766c5c3d"
+            }
+          ],
+          "topLevelEntries": [
+            "0.3.0-rc.2"
+          ]
+        },
+        {
+          "name": "execution-budget",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        },
+        {
+          "name": "async-wait-guard",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        }
+      ],
+      "assertions": [
+        "complete-marketplace-inventory",
+        "exact-installed-set",
+        "exact-cache-set"
+      ]
+    },
+    {
+      "id": "single-context-relay-removed",
+      "expectedInstalled": [],
+      "list": [
+        {
+          "pluginId": "async-wait-guard@context-relay",
+          "name": "async-wait-guard",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "context-relay@context-relay",
+          "name": "context-relay",
+          "marketplaceName": "context-relay",
+          "version": "0.3.0-rc.2",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "execution-budget@context-relay",
+          "name": "execution-budget",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        }
+      ],
+      "cache": [
+        {
+          "name": "context-relay",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        },
+        {
+          "name": "execution-budget",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        },
+        {
+          "name": "async-wait-guard",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        }
+      ],
+      "assertions": [
+        "complete-marketplace-inventory",
+        "exact-installed-set",
+        "exact-cache-set"
+      ]
+    },
+    {
+      "id": "single-execution-budget-installed",
+      "expectedInstalled": [
+        "execution-budget"
+      ],
+      "list": [
+        {
+          "pluginId": "async-wait-guard@context-relay",
+          "name": "async-wait-guard",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "context-relay@context-relay",
+          "name": "context-relay",
+          "marketplaceName": "context-relay",
+          "version": "0.3.0-rc.2",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "execution-budget@context-relay",
+          "name": "execution-budget",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": true,
+          "enabled": true,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        }
+      ],
+      "cache": [
+        {
+          "name": "context-relay",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        },
+        {
+          "name": "execution-budget",
+          "present": true,
+          "fileCount": 13,
+          "skillCount": 1,
+          "manifestSha256": "9d3a69700d2e0d95d3b4638f9e42ada9a2a9ce2b093384fe38f35b45e34a7fad",
+          "treeSha256": "ca5c2f3bca4275bd8893e0f6cf5e7e1a0821003ee520be5933b9f31e9ae66010",
+          "contentMatchesSource": true,
+          "files": [
+            {
+              "path": ".codex-plugin/plugin.json",
+              "bytes": 1581,
+              "sha256": "9d3a69700d2e0d95d3b4638f9e42ada9a2a9ce2b093384fe38f35b45e34a7fad"
+            },
+            {
+              "path": "examples/README.md",
+              "bytes": 653,
+              "sha256": "2fe1c1f72624b5edbb834b753a68ec8ce92c0535f238ec3430b9225fbd2c6fc3"
+            },
+            {
+              "path": "examples/request.json",
+              "bytes": 848,
+              "sha256": "fdc6c64ec51294c6311e2483ecb878097fd9c7b5887c45e50febdabb839853c3"
+            },
+            {
+              "path": "examples/runs.jsonl",
+              "bytes": 2115,
+              "sha256": "7340a233689104d7a998a4dcf90a6a102db4726cba75d673d61faef9876f3de9"
+            },
+            {
+              "path": "skills/execution-budget/SKILL.md",
+              "bytes": 6600,
+              "sha256": "f53c2d12c8c762a19c9888b15b1dbbbce765cbacaa3cd116ea3e078089e10ca8"
+            },
+            {
+              "path": "skills/execution-budget/agents/openai.yaml",
+              "bytes": 253,
+              "sha256": "08ca00acdc8c5f55e81e6f8659f42a3f7832e3c2c4adbf857d40e2d55ea4fabb"
+            },
+            {
+              "path": "skills/execution-budget/references/calibration.schema.json",
+              "bytes": 6049,
+              "sha256": "cd7a3d2eb464c68b5759f4cfe850c1589a11281413c6bf2ecbe5882a9224b3d1"
+            },
+            {
+              "path": "skills/execution-budget/references/execution-budget.schema.json",
+              "bytes": 4994,
+              "sha256": "6dd83e1bae48a392593d794bd09a5c33b84ef86e0dfb8922a6202c79cd0500dc"
+            },
+            {
+              "path": "skills/execution-budget/references/protocol.md",
+              "bytes": 4935,
+              "sha256": "a88f3e707b10683c1a1ea8346c26cc7609f935ca160ccd6c6b9434f4d081c9c6"
+            },
+            {
+              "path": "skills/execution-budget/references/request.schema.json",
+              "bytes": 4773,
+              "sha256": "d8e70dbdabc76c293b6c573f03d18c4959be23da0449b684fee94feedde236ff"
+            },
+            {
+              "path": "skills/execution-budget/references/run-record.schema.json",
+              "bytes": 2083,
+              "sha256": "001eccd854a07a0326c3de9884ce051d4368538aa2d0a1668904a6750d781874"
+            },
+            {
+              "path": "skills/execution-budget/scripts/calibrate-budget.mjs",
+              "bytes": 10486,
+              "sha256": "49146374a85c7ce69f66f5948cb367273ba160be1675a753cdf1a4893fc4132d"
+            },
+            {
+              "path": "skills/execution-budget/scripts/estimate-budget.mjs",
+              "bytes": 25021,
+              "sha256": "f5d93953432629def1f931256e4b91cd0709d2672aa5a6b4709f9659fba3359d"
+            }
+          ],
+          "topLevelEntries": [
+            "0.1.0"
+          ]
+        },
+        {
+          "name": "async-wait-guard",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        }
+      ],
+      "assertions": [
+        "complete-marketplace-inventory",
+        "exact-installed-set",
+        "exact-cache-set"
+      ]
+    },
+    {
+      "id": "single-execution-budget-removed",
+      "expectedInstalled": [],
+      "list": [
+        {
+          "pluginId": "async-wait-guard@context-relay",
+          "name": "async-wait-guard",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "context-relay@context-relay",
+          "name": "context-relay",
+          "marketplaceName": "context-relay",
+          "version": "0.3.0-rc.2",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "execution-budget@context-relay",
+          "name": "execution-budget",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        }
+      ],
+      "cache": [
+        {
+          "name": "context-relay",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        },
+        {
+          "name": "execution-budget",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        },
+        {
+          "name": "async-wait-guard",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        }
+      ],
+      "assertions": [
+        "complete-marketplace-inventory",
+        "exact-installed-set",
+        "exact-cache-set"
+      ]
+    },
+    {
+      "id": "single-async-wait-guard-installed",
+      "expectedInstalled": [
+        "async-wait-guard"
+      ],
+      "list": [
+        {
+          "pluginId": "async-wait-guard@context-relay",
+          "name": "async-wait-guard",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": true,
+          "enabled": true,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "context-relay@context-relay",
+          "name": "context-relay",
+          "marketplaceName": "context-relay",
+          "version": "0.3.0-rc.2",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "execution-budget@context-relay",
+          "name": "execution-budget",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        }
+      ],
+      "cache": [
+        {
+          "name": "context-relay",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        },
+        {
+          "name": "execution-budget",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        },
+        {
+          "name": "async-wait-guard",
+          "present": true,
+          "fileCount": 5,
+          "skillCount": 1,
+          "manifestSha256": "6e65f0de5fdf4f062bf95ee7eb6713dc6f6ab119967b25355de926dc7cc55849",
+          "treeSha256": "690fd359cf66b88877eea23b289c843dc7b061cbf4c3c4e009e96b30fb7cd24e",
+          "contentMatchesSource": true,
+          "files": [
+            {
+              "path": ".codex-plugin/plugin.json",
+              "bytes": 1404,
+              "sha256": "6e65f0de5fdf4f062bf95ee7eb6713dc6f6ab119967b25355de926dc7cc55849"
+            },
+            {
+              "path": "skills/async-wait-guard/SKILL.md",
+              "bytes": 3439,
+              "sha256": "ae1beaef8f4a39d7756e4be4ef26220560c36ab88ed40c8a698a36756aa99842"
+            },
+            {
+              "path": "skills/async-wait-guard/agents/openai.yaml",
+              "bytes": 268,
+              "sha256": "d4779432dd809323f7482ee982d5baf85121f354b83a5441b1873e04f16f7d7b"
+            },
+            {
+              "path": "skills/async-wait-guard/references/policy.md",
+              "bytes": 3797,
+              "sha256": "dcffa52337cc8ed8e1318346f5acebeacc37f3ab30ce3cbdaf127cc6801c4b17"
+            },
+            {
+              "path": "skills/async-wait-guard/scripts/plan-wait.mjs",
+              "bytes": 5499,
+              "sha256": "b1b4f2ef610017c86126586e0893b9e2c394a469164e7c015599693c7879a7d4"
+            }
+          ],
+          "topLevelEntries": [
+            "0.1.0"
+          ]
+        }
+      ],
+      "assertions": [
+        "complete-marketplace-inventory",
+        "exact-installed-set",
+        "exact-cache-set"
+      ]
+    },
+    {
+      "id": "single-async-wait-guard-removed",
+      "expectedInstalled": [],
+      "list": [
+        {
+          "pluginId": "async-wait-guard@context-relay",
+          "name": "async-wait-guard",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "context-relay@context-relay",
+          "name": "context-relay",
+          "marketplaceName": "context-relay",
+          "version": "0.3.0-rc.2",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "execution-budget@context-relay",
+          "name": "execution-budget",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        }
+      ],
+      "cache": [
+        {
+          "name": "context-relay",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        },
+        {
+          "name": "execution-budget",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        },
+        {
+          "name": "async-wait-guard",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        }
+      ],
+      "assertions": [
+        "complete-marketplace-inventory",
+        "exact-installed-set",
+        "exact-cache-set"
+      ]
+    },
+    {
+      "id": "all-three-installed",
+      "expectedInstalled": [
+        "async-wait-guard",
+        "context-relay",
+        "execution-budget"
+      ],
+      "list": [
+        {
+          "pluginId": "async-wait-guard@context-relay",
+          "name": "async-wait-guard",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": true,
+          "enabled": true,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "context-relay@context-relay",
+          "name": "context-relay",
+          "marketplaceName": "context-relay",
+          "version": "0.3.0-rc.2",
+          "installed": true,
+          "enabled": true,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "execution-budget@context-relay",
+          "name": "execution-budget",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": true,
+          "enabled": true,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        }
+      ],
+      "cache": [
+        {
+          "name": "context-relay",
+          "present": true,
+          "fileCount": 8,
+          "skillCount": 1,
+          "manifestSha256": "71379aaa91e60c67439edf6ff8cd8b2f36869e725b86b3f3da73011e28870f30",
+          "treeSha256": "32fa21b085ce90f8bc0148b4ffae87af9e0e95c9ed436678f7b2742cb769908b",
+          "contentMatchesSource": true,
+          "files": [
+            {
+              "path": ".codex-plugin/plugin.json",
+              "bytes": 1449,
+              "sha256": "71379aaa91e60c67439edf6ff8cd8b2f36869e725b86b3f3da73011e28870f30"
+            },
+            {
+              "path": "skills/project-handoff/SKILL.md",
+              "bytes": 7736,
+              "sha256": "f7cc358a2c457dd39668b1e3580591a671f54a623b4b51b67b5e09022f3adf48"
+            },
+            {
+              "path": "skills/project-handoff/agents/openai.yaml",
+              "bytes": 212,
+              "sha256": "5dc11cecf46183e9807e6a477060f8d810fc829807eef658c101d9d9971ddf34"
+            },
+            {
+              "path": "skills/project-handoff/assets/HANDOFF.md",
+              "bytes": 2040,
+              "sha256": "30053bbf4b941b284668eeb69cc8bd56d565dfa328fd62a0e24252d53319d197"
+            },
+            {
+              "path": "skills/project-handoff/references/handoff.schema.json",
+              "bytes": 10963,
+              "sha256": "78857bfa9d6cd0398d4825c045e38901221edfa46df033c60fcbd3becc0df0ac"
+            },
+            {
+              "path": "skills/project-handoff/references/protocol.md",
+              "bytes": 7339,
+              "sha256": "d911a08dc4b4d85eddf7d08b1060c4817ab8892701e50582fac2e0a25eb03326"
+            },
+            {
+              "path": "skills/project-handoff/scripts/snapshot-workspace.mjs",
+              "bytes": 6971,
+              "sha256": "feb8b03fba195cd09994797d5a8eacb1e7e4925b0165bc6e6b63b888b3c974ee"
+            },
+            {
+              "path": "skills/project-handoff/scripts/validate-handoff.mjs",
+              "bytes": 40638,
+              "sha256": "0c80c5cd8e5b655286577ddcb24638d8284af9adea8beba5888b5cf3766c5c3d"
+            }
+          ],
+          "topLevelEntries": [
+            "0.3.0-rc.2"
+          ]
+        },
+        {
+          "name": "execution-budget",
+          "present": true,
+          "fileCount": 13,
+          "skillCount": 1,
+          "manifestSha256": "9d3a69700d2e0d95d3b4638f9e42ada9a2a9ce2b093384fe38f35b45e34a7fad",
+          "treeSha256": "ca5c2f3bca4275bd8893e0f6cf5e7e1a0821003ee520be5933b9f31e9ae66010",
+          "contentMatchesSource": true,
+          "files": [
+            {
+              "path": ".codex-plugin/plugin.json",
+              "bytes": 1581,
+              "sha256": "9d3a69700d2e0d95d3b4638f9e42ada9a2a9ce2b093384fe38f35b45e34a7fad"
+            },
+            {
+              "path": "examples/README.md",
+              "bytes": 653,
+              "sha256": "2fe1c1f72624b5edbb834b753a68ec8ce92c0535f238ec3430b9225fbd2c6fc3"
+            },
+            {
+              "path": "examples/request.json",
+              "bytes": 848,
+              "sha256": "fdc6c64ec51294c6311e2483ecb878097fd9c7b5887c45e50febdabb839853c3"
+            },
+            {
+              "path": "examples/runs.jsonl",
+              "bytes": 2115,
+              "sha256": "7340a233689104d7a998a4dcf90a6a102db4726cba75d673d61faef9876f3de9"
+            },
+            {
+              "path": "skills/execution-budget/SKILL.md",
+              "bytes": 6600,
+              "sha256": "f53c2d12c8c762a19c9888b15b1dbbbce765cbacaa3cd116ea3e078089e10ca8"
+            },
+            {
+              "path": "skills/execution-budget/agents/openai.yaml",
+              "bytes": 253,
+              "sha256": "08ca00acdc8c5f55e81e6f8659f42a3f7832e3c2c4adbf857d40e2d55ea4fabb"
+            },
+            {
+              "path": "skills/execution-budget/references/calibration.schema.json",
+              "bytes": 6049,
+              "sha256": "cd7a3d2eb464c68b5759f4cfe850c1589a11281413c6bf2ecbe5882a9224b3d1"
+            },
+            {
+              "path": "skills/execution-budget/references/execution-budget.schema.json",
+              "bytes": 4994,
+              "sha256": "6dd83e1bae48a392593d794bd09a5c33b84ef86e0dfb8922a6202c79cd0500dc"
+            },
+            {
+              "path": "skills/execution-budget/references/protocol.md",
+              "bytes": 4935,
+              "sha256": "a88f3e707b10683c1a1ea8346c26cc7609f935ca160ccd6c6b9434f4d081c9c6"
+            },
+            {
+              "path": "skills/execution-budget/references/request.schema.json",
+              "bytes": 4773,
+              "sha256": "d8e70dbdabc76c293b6c573f03d18c4959be23da0449b684fee94feedde236ff"
+            },
+            {
+              "path": "skills/execution-budget/references/run-record.schema.json",
+              "bytes": 2083,
+              "sha256": "001eccd854a07a0326c3de9884ce051d4368538aa2d0a1668904a6750d781874"
+            },
+            {
+              "path": "skills/execution-budget/scripts/calibrate-budget.mjs",
+              "bytes": 10486,
+              "sha256": "49146374a85c7ce69f66f5948cb367273ba160be1675a753cdf1a4893fc4132d"
+            },
+            {
+              "path": "skills/execution-budget/scripts/estimate-budget.mjs",
+              "bytes": 25021,
+              "sha256": "f5d93953432629def1f931256e4b91cd0709d2672aa5a6b4709f9659fba3359d"
+            }
+          ],
+          "topLevelEntries": [
+            "0.1.0"
+          ]
+        },
+        {
+          "name": "async-wait-guard",
+          "present": true,
+          "fileCount": 5,
+          "skillCount": 1,
+          "manifestSha256": "6e65f0de5fdf4f062bf95ee7eb6713dc6f6ab119967b25355de926dc7cc55849",
+          "treeSha256": "690fd359cf66b88877eea23b289c843dc7b061cbf4c3c4e009e96b30fb7cd24e",
+          "contentMatchesSource": true,
+          "files": [
+            {
+              "path": ".codex-plugin/plugin.json",
+              "bytes": 1404,
+              "sha256": "6e65f0de5fdf4f062bf95ee7eb6713dc6f6ab119967b25355de926dc7cc55849"
+            },
+            {
+              "path": "skills/async-wait-guard/SKILL.md",
+              "bytes": 3439,
+              "sha256": "ae1beaef8f4a39d7756e4be4ef26220560c36ab88ed40c8a698a36756aa99842"
+            },
+            {
+              "path": "skills/async-wait-guard/agents/openai.yaml",
+              "bytes": 268,
+              "sha256": "d4779432dd809323f7482ee982d5baf85121f354b83a5441b1873e04f16f7d7b"
+            },
+            {
+              "path": "skills/async-wait-guard/references/policy.md",
+              "bytes": 3797,
+              "sha256": "dcffa52337cc8ed8e1318346f5acebeacc37f3ab30ce3cbdaf127cc6801c4b17"
+            },
+            {
+              "path": "skills/async-wait-guard/scripts/plan-wait.mjs",
+              "bytes": 5499,
+              "sha256": "b1b4f2ef610017c86126586e0893b9e2c394a469164e7c015599693c7879a7d4"
+            }
+          ],
+          "topLevelEntries": [
+            "0.1.0"
+          ]
+        }
+      ],
+      "assertions": [
+        "complete-marketplace-inventory",
+        "exact-installed-set",
+        "exact-cache-set"
+      ]
+    },
+    {
+      "id": "removed-async-wait-guard-independently",
+      "expectedInstalled": [
+        "context-relay",
+        "execution-budget"
+      ],
+      "list": [
+        {
+          "pluginId": "async-wait-guard@context-relay",
+          "name": "async-wait-guard",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "context-relay@context-relay",
+          "name": "context-relay",
+          "marketplaceName": "context-relay",
+          "version": "0.3.0-rc.2",
+          "installed": true,
+          "enabled": true,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "execution-budget@context-relay",
+          "name": "execution-budget",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": true,
+          "enabled": true,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        }
+      ],
+      "cache": [
+        {
+          "name": "context-relay",
+          "present": true,
+          "fileCount": 8,
+          "skillCount": 1,
+          "manifestSha256": "71379aaa91e60c67439edf6ff8cd8b2f36869e725b86b3f3da73011e28870f30",
+          "treeSha256": "32fa21b085ce90f8bc0148b4ffae87af9e0e95c9ed436678f7b2742cb769908b",
+          "contentMatchesSource": true,
+          "files": [
+            {
+              "path": ".codex-plugin/plugin.json",
+              "bytes": 1449,
+              "sha256": "71379aaa91e60c67439edf6ff8cd8b2f36869e725b86b3f3da73011e28870f30"
+            },
+            {
+              "path": "skills/project-handoff/SKILL.md",
+              "bytes": 7736,
+              "sha256": "f7cc358a2c457dd39668b1e3580591a671f54a623b4b51b67b5e09022f3adf48"
+            },
+            {
+              "path": "skills/project-handoff/agents/openai.yaml",
+              "bytes": 212,
+              "sha256": "5dc11cecf46183e9807e6a477060f8d810fc829807eef658c101d9d9971ddf34"
+            },
+            {
+              "path": "skills/project-handoff/assets/HANDOFF.md",
+              "bytes": 2040,
+              "sha256": "30053bbf4b941b284668eeb69cc8bd56d565dfa328fd62a0e24252d53319d197"
+            },
+            {
+              "path": "skills/project-handoff/references/handoff.schema.json",
+              "bytes": 10963,
+              "sha256": "78857bfa9d6cd0398d4825c045e38901221edfa46df033c60fcbd3becc0df0ac"
+            },
+            {
+              "path": "skills/project-handoff/references/protocol.md",
+              "bytes": 7339,
+              "sha256": "d911a08dc4b4d85eddf7d08b1060c4817ab8892701e50582fac2e0a25eb03326"
+            },
+            {
+              "path": "skills/project-handoff/scripts/snapshot-workspace.mjs",
+              "bytes": 6971,
+              "sha256": "feb8b03fba195cd09994797d5a8eacb1e7e4925b0165bc6e6b63b888b3c974ee"
+            },
+            {
+              "path": "skills/project-handoff/scripts/validate-handoff.mjs",
+              "bytes": 40638,
+              "sha256": "0c80c5cd8e5b655286577ddcb24638d8284af9adea8beba5888b5cf3766c5c3d"
+            }
+          ],
+          "topLevelEntries": [
+            "0.3.0-rc.2"
+          ]
+        },
+        {
+          "name": "execution-budget",
+          "present": true,
+          "fileCount": 13,
+          "skillCount": 1,
+          "manifestSha256": "9d3a69700d2e0d95d3b4638f9e42ada9a2a9ce2b093384fe38f35b45e34a7fad",
+          "treeSha256": "ca5c2f3bca4275bd8893e0f6cf5e7e1a0821003ee520be5933b9f31e9ae66010",
+          "contentMatchesSource": true,
+          "files": [
+            {
+              "path": ".codex-plugin/plugin.json",
+              "bytes": 1581,
+              "sha256": "9d3a69700d2e0d95d3b4638f9e42ada9a2a9ce2b093384fe38f35b45e34a7fad"
+            },
+            {
+              "path": "examples/README.md",
+              "bytes": 653,
+              "sha256": "2fe1c1f72624b5edbb834b753a68ec8ce92c0535f238ec3430b9225fbd2c6fc3"
+            },
+            {
+              "path": "examples/request.json",
+              "bytes": 848,
+              "sha256": "fdc6c64ec51294c6311e2483ecb878097fd9c7b5887c45e50febdabb839853c3"
+            },
+            {
+              "path": "examples/runs.jsonl",
+              "bytes": 2115,
+              "sha256": "7340a233689104d7a998a4dcf90a6a102db4726cba75d673d61faef9876f3de9"
+            },
+            {
+              "path": "skills/execution-budget/SKILL.md",
+              "bytes": 6600,
+              "sha256": "f53c2d12c8c762a19c9888b15b1dbbbce765cbacaa3cd116ea3e078089e10ca8"
+            },
+            {
+              "path": "skills/execution-budget/agents/openai.yaml",
+              "bytes": 253,
+              "sha256": "08ca00acdc8c5f55e81e6f8659f42a3f7832e3c2c4adbf857d40e2d55ea4fabb"
+            },
+            {
+              "path": "skills/execution-budget/references/calibration.schema.json",
+              "bytes": 6049,
+              "sha256": "cd7a3d2eb464c68b5759f4cfe850c1589a11281413c6bf2ecbe5882a9224b3d1"
+            },
+            {
+              "path": "skills/execution-budget/references/execution-budget.schema.json",
+              "bytes": 4994,
+              "sha256": "6dd83e1bae48a392593d794bd09a5c33b84ef86e0dfb8922a6202c79cd0500dc"
+            },
+            {
+              "path": "skills/execution-budget/references/protocol.md",
+              "bytes": 4935,
+              "sha256": "a88f3e707b10683c1a1ea8346c26cc7609f935ca160ccd6c6b9434f4d081c9c6"
+            },
+            {
+              "path": "skills/execution-budget/references/request.schema.json",
+              "bytes": 4773,
+              "sha256": "d8e70dbdabc76c293b6c573f03d18c4959be23da0449b684fee94feedde236ff"
+            },
+            {
+              "path": "skills/execution-budget/references/run-record.schema.json",
+              "bytes": 2083,
+              "sha256": "001eccd854a07a0326c3de9884ce051d4368538aa2d0a1668904a6750d781874"
+            },
+            {
+              "path": "skills/execution-budget/scripts/calibrate-budget.mjs",
+              "bytes": 10486,
+              "sha256": "49146374a85c7ce69f66f5948cb367273ba160be1675a753cdf1a4893fc4132d"
+            },
+            {
+              "path": "skills/execution-budget/scripts/estimate-budget.mjs",
+              "bytes": 25021,
+              "sha256": "f5d93953432629def1f931256e4b91cd0709d2672aa5a6b4709f9659fba3359d"
+            }
+          ],
+          "topLevelEntries": [
+            "0.1.0"
+          ]
+        },
+        {
+          "name": "async-wait-guard",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        }
+      ],
+      "assertions": [
+        "complete-marketplace-inventory",
+        "exact-installed-set",
+        "exact-cache-set"
+      ]
+    },
+    {
+      "id": "removed-execution-budget-independently",
+      "expectedInstalled": [
+        "context-relay"
+      ],
+      "list": [
+        {
+          "pluginId": "async-wait-guard@context-relay",
+          "name": "async-wait-guard",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "context-relay@context-relay",
+          "name": "context-relay",
+          "marketplaceName": "context-relay",
+          "version": "0.3.0-rc.2",
+          "installed": true,
+          "enabled": true,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "execution-budget@context-relay",
+          "name": "execution-budget",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        }
+      ],
+      "cache": [
+        {
+          "name": "context-relay",
+          "present": true,
+          "fileCount": 8,
+          "skillCount": 1,
+          "manifestSha256": "71379aaa91e60c67439edf6ff8cd8b2f36869e725b86b3f3da73011e28870f30",
+          "treeSha256": "32fa21b085ce90f8bc0148b4ffae87af9e0e95c9ed436678f7b2742cb769908b",
+          "contentMatchesSource": true,
+          "files": [
+            {
+              "path": ".codex-plugin/plugin.json",
+              "bytes": 1449,
+              "sha256": "71379aaa91e60c67439edf6ff8cd8b2f36869e725b86b3f3da73011e28870f30"
+            },
+            {
+              "path": "skills/project-handoff/SKILL.md",
+              "bytes": 7736,
+              "sha256": "f7cc358a2c457dd39668b1e3580591a671f54a623b4b51b67b5e09022f3adf48"
+            },
+            {
+              "path": "skills/project-handoff/agents/openai.yaml",
+              "bytes": 212,
+              "sha256": "5dc11cecf46183e9807e6a477060f8d810fc829807eef658c101d9d9971ddf34"
+            },
+            {
+              "path": "skills/project-handoff/assets/HANDOFF.md",
+              "bytes": 2040,
+              "sha256": "30053bbf4b941b284668eeb69cc8bd56d565dfa328fd62a0e24252d53319d197"
+            },
+            {
+              "path": "skills/project-handoff/references/handoff.schema.json",
+              "bytes": 10963,
+              "sha256": "78857bfa9d6cd0398d4825c045e38901221edfa46df033c60fcbd3becc0df0ac"
+            },
+            {
+              "path": "skills/project-handoff/references/protocol.md",
+              "bytes": 7339,
+              "sha256": "d911a08dc4b4d85eddf7d08b1060c4817ab8892701e50582fac2e0a25eb03326"
+            },
+            {
+              "path": "skills/project-handoff/scripts/snapshot-workspace.mjs",
+              "bytes": 6971,
+              "sha256": "feb8b03fba195cd09994797d5a8eacb1e7e4925b0165bc6e6b63b888b3c974ee"
+            },
+            {
+              "path": "skills/project-handoff/scripts/validate-handoff.mjs",
+              "bytes": 40638,
+              "sha256": "0c80c5cd8e5b655286577ddcb24638d8284af9adea8beba5888b5cf3766c5c3d"
+            }
+          ],
+          "topLevelEntries": [
+            "0.3.0-rc.2"
+          ]
+        },
+        {
+          "name": "execution-budget",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        },
+        {
+          "name": "async-wait-guard",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        }
+      ],
+      "assertions": [
+        "complete-marketplace-inventory",
+        "exact-installed-set",
+        "exact-cache-set"
+      ]
+    },
+    {
+      "id": "removed-context-relay-independently",
+      "expectedInstalled": [],
+      "list": [
+        {
+          "pluginId": "async-wait-guard@context-relay",
+          "name": "async-wait-guard",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "context-relay@context-relay",
+          "name": "context-relay",
+          "marketplaceName": "context-relay",
+          "version": "0.3.0-rc.2",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        },
+        {
+          "pluginId": "execution-budget@context-relay",
+          "name": "execution-budget",
+          "marketplaceName": "context-relay",
+          "version": "0.1.0",
+          "installed": false,
+          "enabled": false,
+          "installPolicy": "AVAILABLE",
+          "authPolicy": "ON_INSTALL"
+        }
+      ],
+      "cache": [
+        {
+          "name": "context-relay",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        },
+        {
+          "name": "execution-budget",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        },
+        {
+          "name": "async-wait-guard",
+          "present": false,
+          "fileCount": 0,
+          "skillCount": 0,
+          "manifestSha256": null,
+          "treeSha256": null,
+          "contentMatchesSource": false,
+          "files": [],
+          "topLevelEntries": []
+        }
+      ],
+      "assertions": [
+        "complete-marketplace-inventory",
+        "exact-installed-set",
+        "exact-cache-set"
+      ]
+    }
+  ],
+  "failure": null
+}
