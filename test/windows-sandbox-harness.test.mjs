@@ -628,6 +628,8 @@ test("bootstrap pins supply chain, keeps auth interactive, and emits fail-closed
   assert.match(source, /function Invoke-ManualDeviceAuthentication/);
   assert.match(source, /\[ValidateRange\(1, 3600\)\]\[int\]\$TimeoutSeconds = 900/);
   assert.match(source, /1-CLICK-HERE-CODEX-AUTHORIZATION\.cmd/);
+  assert.match(source, /\$env:Path = '\$escapedNodeHome;' \+ `\$env:Path/);
+  assert.match(source, /set "PATH=\$NodeHome;%PATH%"/);
   assert.doesNotMatch(source, /Start-Process -FilePath "powershell\.exe"[\s\S]*-WindowStyle Normal -PassThru/);
   assert.match(source, /login --device-auth/);
   assert.match(source, /login status \*> `\$null/);
@@ -671,15 +673,20 @@ test("manual device authentication gate uses a private sentinel and fails closed
   const helper = source.slice(helperStart, helperEnd);
   const fakeCodexSuccess = join(directory, "fake-codex-success.cmd");
   const fakeCodexFailure = join(directory, "fake-codex-failure.cmd");
+  const fakeCodexNode = join(directory, "fake-codex-node.cmd");
+  const fakeCodexNodeScript = join(directory, "fake-codex-node.mjs");
   writeFileSync(fakeCodexSuccess, "@exit /b 0\r\n", "utf8");
   writeFileSync(fakeCodexFailure, "@exit /b 1\r\n", "utf8");
+  writeFileSync(fakeCodexNode, '@node "%~dp0fake-codex-node.mjs" %*\r\n', "utf8");
+  writeFileSync(fakeCodexNodeScript, "process.exit(0);\n", "utf8");
 
-  const runCase = (mode, codexCommand = fakeCodexSuccess, timeoutSeconds = 1) => {
+  const runCase = (mode, codexCommand = fakeCodexSuccess, timeoutSeconds = 1, nodeHome = dirname(process.execPath)) => {
     const caseRoot = join(directory, mode);
     mkdirSync(caseRoot, { recursive: true });
     const script = join(caseRoot, "case.ps1");
     const escapedRoot = caseRoot.replaceAll("'", "''");
     const escapedCodex = codexCommand.replaceAll("'", "''");
+    const escapedNodeHome = nodeHome.replaceAll("'", "''");
     writeFileSync(script, [
       "$ErrorActionPreference = 'Stop'",
       "$script:WorkingRoot = '" + escapedRoot + "'",
@@ -694,12 +701,19 @@ test("manual device authentication gate uses a private sentinel and fails closed
       `  if ($script:TestSleepCount -eq 1 -and '${mode}' -in @('success','parent-status-failure')) { [IO.File]::WriteAllText((Join-Path $authRoot 'device-authentication-complete.sentinel'),'AUTHENTICATED') }`,
       `  if ($script:TestSleepCount -eq 1 -and '${mode}' -eq 'invalid-sentinel') { [IO.File]::WriteAllText((Join-Path $authRoot 'device-authentication-complete.sentinel'),'INVALID') }`,
       `  if ($script:TestSleepCount -eq 1 -and '${mode}' -eq 'launcher-failure') { [IO.File]::WriteAllText((Join-Path $authRoot 'device-authentication-failed.sentinel'),'FAILED') }`,
+      `  if ($script:TestSleepCount -eq 1 -and '${mode}' -eq 'node-wrapper') {`,
+      "    $savedPath = $env:Path",
+      "    $env:Path = (Join-Path $env:SystemRoot 'System32') + ';' + $PSHOME",
+      "    & (Join-Path $env:USERPROFILE 'Desktop\\1-CLICK-HERE-CODEX-AUTHORIZATION.cmd') | Out-Null",
+      "    if ($LASTEXITCODE -ne 0) { throw 'Desktop launcher could not find portable Node.js.' }",
+      "    $env:Path = $savedPath",
+      "  }",
       `  if ('${mode}' -eq 'timeout') { Microsoft.PowerShell.Utility\\Start-Sleep -Milliseconds 550 }`,
       "}",
       "New-Item -ItemType Directory -Force -Path (Join-Path $env:USERPROFILE 'Desktop') | Out-Null",
       helper,
       "try {",
-      `  Invoke-ManualDeviceAuthentication -CodexCommand '${escapedCodex}' -TimeoutSeconds ${timeoutSeconds} -DesktopPath (Join-Path $env:USERPROFILE 'Desktop')`,
+      `  Invoke-ManualDeviceAuthentication -CodexCommand '${escapedCodex}' -NodeHome '${escapedNodeHome}' -TimeoutSeconds ${timeoutSeconds} -DesktopPath (Join-Path $env:USERPROFILE 'Desktop')`,
       "  [ordered]@{ result='ok'; stage=$script:CurrentStage } | ConvertTo-Json -Compress",
       "}",
       "catch {",
@@ -712,6 +726,10 @@ test("manual device authentication gate uses a private sentinel and fails closed
   };
 
   assert.deepEqual(runCase("success"), {
+    result: "ok",
+    stage: "manual-device-authentication-complete",
+  });
+  assert.deepEqual(runCase("node-wrapper", fakeCodexNode), {
     result: "ok",
     stage: "manual-device-authentication-complete",
   });
