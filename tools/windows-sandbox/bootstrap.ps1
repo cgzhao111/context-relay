@@ -27,6 +27,56 @@ $MinGitArchiveSha256 = "4e03f94c2ffbf70be337e005cee02661c732dbfc81031a078bda9299
 $Repository = "cgzhao111/context-relay"
 $RepositoryCommit = "dd3cbfb1f10c29808193dee167f4d595e7046f38"
 $MarketplaceName = "context-relay"
+$script:CurrentStage = "initialize"
+
+function Remove-DownloadArtifact {
+    param([string]$Name, [string]$Path)
+    if (-not (Test-Path -LiteralPath $Path)) { return }
+    try {
+        Remove-Item -LiteralPath $Path -Force
+    }
+    catch {
+        throw "Download cleanup failed for step '$Name'."
+    }
+}
+
+function Invoke-DownloadWithRetry {
+    param(
+        [Parameter(Mandatory = $true)][string]$Name,
+        [Parameter(Mandatory = $true)][uri]$Uri,
+        [Parameter(Mandatory = $true)][string]$OutFile,
+        [ValidateRange(1, 6)][int]$MaxAttempts = 4
+    )
+
+    $script:CurrentStage = $Name
+    if ($Uri.Scheme -ne [Uri]::UriSchemeHttps -or [string]::IsNullOrWhiteSpace($Uri.Host)) {
+        throw "Download step '$Name' requires a valid HTTPS source."
+    }
+    for ($attempt = 1; $attempt -le $MaxAttempts; $attempt++) {
+        Remove-DownloadArtifact -Name $Name -Path $OutFile
+        try {
+            Invoke-WebRequest -UseBasicParsing -Uri $Uri.AbsoluteUri -OutFile $OutFile
+            $downloaded = Get-Item -LiteralPath $OutFile -ErrorAction Stop
+            if ($downloaded.Length -le 0) {
+                throw "The downloaded file was empty."
+            }
+            return
+        }
+        catch {
+            Remove-DownloadArtifact -Name $Name -Path $OutFile
+            if ($attempt -eq $MaxAttempts) {
+                throw "Download step '$Name' failed after $MaxAttempts attempts from host '$($Uri.Host)'."
+            }
+            if ($attempt -eq 1) {
+                # Fresh Windows PowerShell 5.1 images can require an explicit
+                # TLS 1.2 fallback after the system-default negotiation fails.
+                [System.Net.ServicePointManager]::SecurityProtocol =
+                    [System.Net.ServicePointManager]::SecurityProtocol -bor [System.Net.SecurityProtocolType]::Tls12
+            }
+            Start-Sleep -Seconds ([Math]::Min(8, [Math]::Pow(2, $attempt)))
+        }
+    }
+}
 
 function Write-Utf8NoBom {
     param([string]$Path, [AllowEmptyString()][string]$Value)
@@ -39,6 +89,16 @@ function Write-JsonEvidence {
     Write-Utf8NoBom -Path (Join-Path $script:RunRoot $Name) -Value (($Value | ConvertTo-Json -Depth 15) + "`n")
 }
 
+function Get-RelativeEvidencePath {
+    param(
+        [Parameter(Mandatory = $true)][string]$Root,
+        [Parameter(Mandatory = $true)][string]$Path
+    )
+    $rootUri = [Uri]::new(($Root.TrimEnd("\") + "\"))
+    $pathUri = [Uri]::new($Path)
+    return [Uri]::UnescapeDataString($rootUri.MakeRelativeUri($pathUri).ToString()).Replace("\", "/")
+}
+
 function Invoke-CapturedProcess {
     param(
         [Parameter(Mandatory = $true)][string]$Name,
@@ -47,6 +107,7 @@ function Invoke-CapturedProcess {
         [int[]]$AllowedExitCodes = @(0)
     )
 
+    $script:CurrentStage = $Name
     $stdoutPath = Join-Path $script:RunRoot ($Name + ".stdout.private.txt")
     $stderrPath = Join-Path $script:RunRoot ($Name + ".stderr.private.txt")
     & $FilePath @Arguments 1> $stdoutPath 2> $stderrPath
@@ -216,7 +277,7 @@ function Invoke-PrivateRuntimeProbe {
     $exitCode = Invoke-CapturedProcess -Name $Name -FilePath $script:CodexCommand -Arguments $arguments
     $response = if (Test-Path -LiteralPath $lastMessage) { [System.IO.File]::ReadAllText($lastMessage) } else { "" }
     $markerResults = @($ExpectedMarkers | ForEach-Object {
-        [ordered]@{ marker = $_; observed = $response.Contains($_, [System.StringComparison]::Ordinal) }
+        [ordered]@{ marker = $_; observed = ($response.IndexOf($_, [System.StringComparison]::Ordinal) -ge 0) }
     })
     Write-JsonEvidence -Name ($Name + ".review.private.json") -Value ([ordered]@{
         schema_version = "1.0"
@@ -264,7 +325,8 @@ function Get-VerifiedCodexPackage {
         throw "npm returned an unexpected Codex package tarball URL."
     }
     $tarballPath = Join-Path $toolRoot "openai-codex-$CodexVersion.tgz"
-    Invoke-WebRequest -UseBasicParsing -Uri $tarballUri.AbsoluteUri -OutFile $tarballPath
+    Invoke-DownloadWithRetry -Name "download-codex-package" -Uri $tarballUri -OutFile $tarballPath
+    $script:CurrentStage = "verify-codex-package"
     $sha512 = [System.Security.Cryptography.SHA512]::Create()
     try {
         $stream = [System.IO.File]::OpenRead($tarballPath)
@@ -305,7 +367,8 @@ function Get-VerifiedCodexPackage {
         throw "npm returned an unexpected Windows Codex package tarball URL."
     }
     $platformTarballPath = Join-Path $toolRoot "openai-codex-$CodexVersion-win32-x64.tgz"
-    Invoke-WebRequest -UseBasicParsing -Uri $platformTarballUri.AbsoluteUri -OutFile $platformTarballPath
+    Invoke-DownloadWithRetry -Name "download-codex-windows-package" -Uri $platformTarballUri -OutFile $platformTarballPath
+    $script:CurrentStage = "verify-codex-windows-package"
     $platformSha512 = [System.Security.Cryptography.SHA512]::Create()
     try {
         $platformStream = [System.IO.File]::OpenRead($platformTarballPath)
@@ -338,10 +401,10 @@ function Invoke-ContextRelayArtifactProbe {
     New-Item -ItemType Directory -Force -Path $fixtureRoot, $outputRoot | Out-Null
 
     $rawRoot = "https://raw.githubusercontent.com/$Repository/$RepositoryCommit"
-    Invoke-WebRequest -UseBasicParsing -Uri "$rawRoot/examples/basic/handoff.json" -OutFile (Join-Path $fixtureRoot "handoff.json")
-    Invoke-WebRequest -UseBasicParsing -Uri "$rawRoot/examples/basic/PROJECT_HANDOFF.md" -OutFile (Join-Path $fixtureRoot "PROJECT_HANDOFF.md")
+    Invoke-DownloadWithRetry -Name "download-handoff-json-fixture" -Uri "$rawRoot/examples/basic/handoff.json" -OutFile (Join-Path $fixtureRoot "handoff.json")
+    Invoke-DownloadWithRetry -Name "download-handoff-markdown-fixture" -Uri "$rawRoot/examples/basic/PROJECT_HANDOFF.md" -OutFile (Join-Path $fixtureRoot "PROJECT_HANDOFF.md")
     $validatorPath = Join-Path $probeRoot "validate-handoff.mjs"
-    Invoke-WebRequest -UseBasicParsing -Uri "$rawRoot/plugins/context-relay/skills/project-handoff/scripts/validate-handoff.mjs" -OutFile $validatorPath
+    Invoke-DownloadWithRetry -Name "download-handoff-validator" -Uri "$rawRoot/plugins/context-relay/skills/project-handoff/scripts/validate-handoff.mjs" -OutFile $validatorPath
 
     $prompt = @'
 Explicitly use $project-handoff. Read only fixture/handoff.json and fixture/PROJECT_HANDOFF.md, which are public synthetic inputs. Create a fresh, internally consistent handoff pack at synthetic-output/handoff.json and synthetic-output/PROJECT_HANDOFF.md. Keep every fact synthetic, preserve source completeness, distinguish VERIFIED, PLANNED, and UNKNOWN, and do not include account, absolute path, session, or credential data. Do not copy stale timestamps; use the current time. Do not perform publication or external actions. Finish by stating that deterministic strict and negative validation will be performed by the harness, not by your response. A response marker is not required and will not be used for certification.
@@ -445,7 +508,8 @@ Write-JsonEvidence -Name "run-summary.private.json" -Value $summary
 try {
     $script:PartialReportHelper = Join-Path $toolRoot "New-CompatibilityPartialReport.ps1"
     $partialReportHelperUri = "https://raw.githubusercontent.com/$Repository/$HarnessCommit/tools/windows-sandbox/New-CompatibilityPartialReport.ps1"
-    Invoke-WebRequest -UseBasicParsing -Uri $partialReportHelperUri -OutFile $script:PartialReportHelper
+    Invoke-DownloadWithRetry -Name "download-partial-report-helper" -Uri $partialReportHelperUri -OutFile $script:PartialReportHelper
+    $script:CurrentStage = "verify-partial-report-helper"
     $actualPartialReportHelperSha256 = (Get-FileHash -LiteralPath $script:PartialReportHelper -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($actualPartialReportHelperSha256 -ne $PartialReportHelperSha256) {
         throw "Downloaded partial report helper did not match the host-pinned SHA256."
@@ -453,7 +517,8 @@ try {
 
     $minGitArchive = Join-Path $toolRoot $MinGitArchiveName
     $minGitUri = "https://github.com/git-for-windows/git/releases/download/$GitReleaseTag/$MinGitArchiveName"
-    Invoke-WebRequest -UseBasicParsing -Uri $minGitUri -OutFile $minGitArchive
+    Invoke-DownloadWithRetry -Name "download-mingit" -Uri $minGitUri -OutFile $minGitArchive
+    $script:CurrentStage = "verify-mingit"
     $actualMinGitHash = (Get-FileHash -LiteralPath $minGitArchive -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($actualMinGitHash -ne $MinGitArchiveSha256) {
         throw "MinGit archive failed the fixed SHA256 check."
@@ -472,7 +537,8 @@ try {
 
     $nodeArchive = Join-Path $toolRoot "node.zip"
     $nodeUri = "https://nodejs.org/dist/v$NodeVersion/node-v$NodeVersion-win-x64.zip"
-    Invoke-WebRequest -UseBasicParsing -Uri $nodeUri -OutFile $nodeArchive
+    Invoke-DownloadWithRetry -Name "download-node" -Uri $nodeUri -OutFile $nodeArchive
+    $script:CurrentStage = "verify-node"
     $actualNodeHash = (Get-FileHash -LiteralPath $nodeArchive -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($actualNodeHash -ne $NodeArchiveSha256) {
         throw "Node.js archive failed the fixed SHA256 check."
@@ -640,6 +706,7 @@ Explicitly use $async-wait-guard. This is a reasoning-only synthetic probe: do n
 }
 catch {
     $summary.status = "FAILED_PRIVATE_REVIEW_REQUIRED"
+    $summary.failure_stage = $script:CurrentStage
     $summary.failure_class = $_.Exception.GetType().FullName
     $summary.failure_message = $_.Exception.Message
     throw
@@ -649,7 +716,7 @@ finally {
     Write-JsonEvidence -Name "run-summary.private.json" -Value $summary
     $hashes = Get-ChildItem -LiteralPath $script:RunRoot -File -Recurse | Sort-Object FullName | ForEach-Object {
         [ordered]@{
-            relative_path = [System.IO.Path]::GetRelativePath($script:RunRoot, $_.FullName).Replace("\", "/")
+            relative_path = Get-RelativeEvidencePath -Root $script:RunRoot -Path $_.FullName
             sha256 = (Get-FileHash -LiteralPath $_.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
         }
     }

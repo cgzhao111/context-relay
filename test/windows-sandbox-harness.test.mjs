@@ -201,6 +201,9 @@ test("generator pins hashes to LF Git blobs when the checkout files use CRLF", w
   assert.ok(encoded);
   const launcher = Buffer.from(encoded, "base64").toString("utf16le");
   assert.match(launcher, new RegExp(`actualHash -ne '${expected["bootstrap.ps1"]}'`));
+  assert.match(launcher, /for \(\$attempt = 1; \$attempt -le 4; \$attempt\+\+\)/);
+  assert.match(launcher, /Bootstrap download failed after four attempts/);
+  assert.match(launcher, /SecurityProtocol -bor \[System\.Net\.SecurityProtocolType\]::Tls12/);
   assert.match(launcher, new RegExp(`PartialReportHelperSha256 '${expected["New-CompatibilityPartialReport.ps1"]}'`));
   assert.equal(launcher.includes(working["bootstrap.ps1"]), false);
   assert.equal(launcher.includes(working["New-CompatibilityPartialReport.ps1"]), false);
@@ -447,6 +450,99 @@ test("Windows tar extracts zip archives without the PowerShell.Archive module", 
   assert.equal(readFileSync(join(destination, "payload.txt"), "utf8"), "verified zip payload\n");
 });
 
+test("PowerShell 5.1 download retry clears partial files and keeps errors sanitized", windowsOnly, () => {
+  const directory = fixture("sandbox-download-retry");
+  const source = readFileSync(bootstrap, "utf8");
+  const helperStart = source.indexOf("function Remove-DownloadArtifact");
+  const helperEnd = source.indexOf("function Write-Utf8NoBom");
+  assert.ok(helperStart >= 0 && helperEnd > helperStart);
+  const helpers = source.slice(helperStart, helperEnd);
+  const script = join(directory, "retry.ps1");
+  const output = join(directory, "payload.bin");
+  writeFileSync(script, [
+    "$ErrorActionPreference = 'Stop'",
+    "$script:CurrentStage = 'test'",
+    "$script:calls = 0",
+    "$script:sleeps = @()",
+    "function Start-Sleep { param([double]$Seconds) $script:sleeps += [int]$Seconds }",
+    "function Invoke-WebRequest {",
+    "  param([switch]$UseBasicParsing,[string]$Uri,[string]$OutFile)",
+    "  $script:calls++",
+    "  [IO.File]::WriteAllText($OutFile, ('partial-' + $script:calls))",
+    "  if ($script:calls -lt 3) { throw 'synthetic transient failure with private detail' }",
+    "  [IO.File]::WriteAllText($OutFile, 'verified')",
+    "}",
+    helpers,
+    `Invoke-DownloadWithRetry -Name 'synthetic-download' -Uri 'https://example.invalid/private?q=secret' -OutFile '${output.replaceAll("'", "''")}'`,
+    "$result = [ordered]@{ calls=$script:calls; sleeps=@($script:sleeps); content=[IO.File]::ReadAllText('" + output.replaceAll("'", "''") + "') }",
+    "$result | ConvertTo-Json -Compress",
+  ].join("\r\n"), "utf8");
+  const completed = ps(script);
+  assert.equal(completed.status, 0, completed.stderr);
+  assert.deepEqual(JSON.parse(completed.stdout.trim()), { calls: 3, sleeps: [2, 4], content: "verified" });
+
+  const rejected = join(directory, "reject.ps1");
+  writeFileSync(rejected, [
+    "$ErrorActionPreference = 'Stop'",
+    "$script:CurrentStage = 'test'",
+    helpers,
+    "try { Invoke-DownloadWithRetry -Name 'unsafe-source' -Uri 'http://example.invalid/private?q=secret' -OutFile 'C:\\private\\artifact.bin'; exit 9 }",
+    "catch { Write-Output $_.Exception.Message; exit 0 }",
+  ].join("\r\n"), "utf8");
+  const failed = ps(rejected);
+  assert.equal(failed.status, 0, failed.stderr);
+  assert.match(failed.stdout, /requires a valid HTTPS source/);
+  assert.doesNotMatch(failed.stdout, /private|artifact\.bin|q=secret/i);
+
+  const exhausted = join(directory, "exhausted.ps1");
+  const exhaustedOutput = join(directory, "exhausted.private.bin");
+  writeFileSync(exhausted, [
+    "$ErrorActionPreference = 'Stop'",
+    "$script:CurrentStage = 'test'",
+    "$script:calls = 0",
+    "function Start-Sleep { param([double]$Seconds) }",
+    "function Invoke-WebRequest {",
+    "  param([switch]$UseBasicParsing,[string]$Uri,[string]$OutFile)",
+    "  $script:calls++",
+    "  [IO.File]::WriteAllText($OutFile, 'partial-secret')",
+    "  throw 'synthetic transient failure with private detail'",
+    "}",
+    helpers,
+    `try { Invoke-DownloadWithRetry -Name 'exhausted-download' -Uri 'https://example.invalid/private?q=secret' -OutFile '${exhaustedOutput.replaceAll("'", "''")}'; exit 9 }`,
+    "catch { [ordered]@{ calls=$script:calls; exists=(Test-Path -LiteralPath '" + exhaustedOutput.replaceAll("'", "''") + "'); message=$_.Exception.Message } | ConvertTo-Json -Compress; exit 0 }",
+  ].join("\r\n"), "utf8");
+  const exhaustedResult = ps(exhausted);
+  assert.equal(exhaustedResult.status, 0, exhaustedResult.stderr);
+  const exhaustedJson = JSON.parse(exhaustedResult.stdout.trim());
+  assert.equal(exhaustedJson.calls, 4);
+  assert.equal(exhaustedJson.exists, false);
+  assert.match(exhaustedJson.message, /failed after 4 attempts from host 'example\.invalid'/);
+  assert.doesNotMatch(exhaustedJson.message, /private|secret|artifact|exhausted\.private/i);
+});
+
+test("PowerShell 5.1 compatibility helpers preserve ordinal markers and relative evidence paths", windowsOnly, () => {
+  const directory = fixture("sandbox-ps51-compat");
+  const child = join(directory, "nested", "evidence.json");
+  mkdirSync(dirname(child), { recursive: true });
+  writeFileSync(child, "{}\n", "utf8");
+  const source = readFileSync(bootstrap, "utf8");
+  const start = source.indexOf("function Get-RelativeEvidencePath");
+  const end = source.indexOf("function Invoke-CapturedProcess");
+  assert.ok(start >= 0 && end > start);
+  const helper = source.slice(start, end);
+  const script = join(directory, "compat.ps1");
+  writeFileSync(script, [
+    "$ErrorActionPreference = 'Stop'",
+    helper,
+    `$relative = Get-RelativeEvidencePath -Root '${directory.replaceAll("'", "''")}' -Path '${child.replaceAll("'", "''")}'`,
+    "$observed = ('ABC'.IndexOf('B',[System.StringComparison]::Ordinal) -ge 0)",
+    "[ordered]@{ relative=$relative; observed=$observed } | ConvertTo-Json -Compress",
+  ].join("\r\n"), "utf8");
+  const completed = ps(script);
+  assert.equal(completed.status, 0, completed.stderr);
+  assert.deepEqual(JSON.parse(completed.stdout.trim()), { relative: "nested/evidence.json", observed: true });
+});
+
 test("bootstrap pins supply chain, keeps auth interactive, and emits fail-closed partial contracts", () => {
   const source = readFileSync(bootstrap, "utf8");
   const reportSource = readFileSync(partialReport, "utf8");
@@ -458,6 +554,20 @@ test("bootstrap pins supply chain, keeps auth interactive, and emits fail-closed
   assert.match(source, /2\.55\.0\.windows\.4/);
   assert.match(source, /MinGit-2\.55\.0\.4-64-bit\.zip/);
   assert.match(source, /4e03f94c2ffbf70be337e005cee02661c732dbfc81031a078bda9299b9a7d644/);
+  assert.match(source, /function Invoke-DownloadWithRetry/);
+  assert.match(source, /\$Uri\.Scheme -ne \[Uri\]::UriSchemeHttps/);
+  assert.match(source, /function Remove-DownloadArtifact/);
+  assert.match(source, /TLS 1\.2 fallback after the system-default negotiation fails/);
+  assert.match(source, /SecurityProtocol -bor \[System\.Net\.SecurityProtocolType\]::Tls12/);
+  assert.match(source, /\[ValidateRange\(1, 6\)\]\[int\]\$MaxAttempts = 4/);
+  assert.match(source, /Remove-DownloadArtifact -Name \$Name -Path \$OutFile/);
+  assert.match(source, /Download step '\$Name' failed after \$MaxAttempts attempts/);
+  assert.match(source, /failure_stage = \$script:CurrentStage/);
+  assert.match(source, /function Get-RelativeEvidencePath/);
+  assert.match(source, /\.IndexOf\(\$_, \[System\.StringComparison\]::Ordinal\) -ge 0/);
+  assert.doesNotMatch(source, /\[System\.IO\.Path\]::GetRelativePath/);
+  assert.doesNotMatch(source, /\.Contains\(\$_, \[System\.StringComparison\]::Ordinal\)/);
+  assert.equal((source.match(/Invoke-WebRequest -UseBasicParsing/g) ?? []).length, 1);
   assert.doesNotMatch(source, /Expand-Archive/);
   assert.match(source, /Invoke-CapturedProcess -Name "extract-mingit" -FilePath "tar\.exe"/);
   assert.match(source, /Invoke-CapturedProcess -Name "extract-node" -FilePath "tar\.exe"/);
