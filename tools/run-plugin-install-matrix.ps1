@@ -380,7 +380,8 @@ function Save-StateSnapshot {
   }
   Assert-SetEqual -Actual $entryNames -Expected $pluginNames -Label "$StepId marketplace inventory"
   $script:stage = "$StepId-duplicate-entries"
-  if (($entryNames | Group-Object | Where-Object Count -ne 1).Count -ne 0) {
+  $duplicateGroups = @($entryNames | Group-Object | Where-Object { $_.Count -ne 1 })
+  if ($duplicateGroups.Count -ne 0) {
     throw "$StepId marketplace inventory contained duplicate plugin entries."
   }
 

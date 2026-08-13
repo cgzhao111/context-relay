@@ -108,6 +108,8 @@ test("harness refuses CODEX_HOME overrides and emits bounded evidence", () => {
   assert.match(harness, /\(\[DateTimeOffset\]\$details\.completedAt\)\.ToUniversalTime\(\)\.ToString\('o'\)/);
   assert.match(harness, /\$script:stage = "\$StepId-cache-namespace"/);
   assert.match(harness, /uniqueEntryCount = @\(\$entryNames \| Sort-Object -Unique\)\.Count/);
+  assert.match(harness, /\$duplicateGroups = @\(\$entryNames \| Group-Object \| Where-Object \{ \$_\.Count -ne 1 \}\)/);
+  assert.match(harness, /if \(\$duplicateGroups\.Count -ne 0\)/);
   assert.doesNotMatch(harness, /Set-Content[^\r\n]*(?:\$stdout|\$stderr)/i);
   const evidenceProjection = harness.slice(
     harness.indexOf("$sanitizedEntries ="),
