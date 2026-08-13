@@ -50,9 +50,9 @@ function sha256(value) {
   return createHash("sha256").update(value).digest("hex");
 }
 
-function inventory({ context = true, budget = false, wait = false } = {}) {
+function inventory({ context = true, budget = false, wait = false, contextVersion = "0.3.0-rc.2" } = {}) {
   const target = [
-    ["context-relay@context-relay", "0.3.0-rc.2", context],
+    ["context-relay@context-relay", contextVersion, context],
     ["execution-budget@context-relay", "0.1.0", budget],
     ["async-wait-guard@context-relay", "0.1.0", wait],
   ];
@@ -430,6 +430,46 @@ test("host baseline comparison is read-only, deterministic, and fails on drift",
   const report = JSON.parse(readFileSync(changedReport, "utf8"));
   assert.equal(report.host_inventory_unchanged, false);
   assert.deepEqual(report.changed_plugin_ids, ["execution-budget@context-relay"]);
+  assert.deepEqual(report.changed_plugin_states, [{
+    plugin_id: "execution-budget@context-relay",
+    change_type: "modified",
+    baseline_version: "0.1.0",
+    current_version: "0.1.0",
+    baseline_installed: false,
+    current_installed: true,
+    baseline_enabled: false,
+    current_enabled: true,
+  }]);
+});
+
+test("host baseline report identifies version-only drift", windowsOnly, () => {
+  const directory = fixture("sandbox-baseline-version-drift");
+  const beforeInventory = join(directory, "before-inventory.json");
+  const changedInventory = join(directory, "changed-inventory.json");
+  const baselinePath = join(directory, "baseline.private.json");
+  const changedReport = join(directory, "changed.private.json");
+  writeFileSync(beforeInventory, JSON.stringify(inventory()), "utf8");
+  writeFileSync(changedInventory, JSON.stringify(inventory({ contextVersion: "0.3.0-rc.3" })), "utf8");
+
+  const capture = ps(baseline, ["-Mode", "Capture", "-BaselinePath", baselinePath, "-InventoryJsonPath", beforeInventory]);
+  assert.equal(capture.status, 0, capture.stderr);
+  const drift = ps(baseline, [
+    "-Mode", "Compare", "-BaselinePath", baselinePath, "-ReportPath", changedReport,
+    "-InventoryJsonPath", changedInventory,
+  ]);
+  assert.equal(drift.status, 3);
+  const report = JSON.parse(readFileSync(changedReport, "utf8"));
+  assert.deepEqual(report.changed_plugin_ids, ["context-relay@context-relay"]);
+  assert.deepEqual(report.changed_plugin_states, [{
+    plugin_id: "context-relay@context-relay",
+    change_type: "modified",
+    baseline_version: "0.3.0-rc.2",
+    current_version: "0.3.0-rc.3",
+    baseline_installed: true,
+    current_installed: true,
+    baseline_enabled: true,
+    current_enabled: true,
+  }]);
 });
 
 test("Windows tar extracts zip archives without the PowerShell.Archive module", windowsOnly, () => {
@@ -585,7 +625,23 @@ test("bootstrap pins supply chain, keeps auth interactive, and emits fail-closed
   assert.match(source, /automatic_inventory_transition_matrix_verified = \$true/);
   assert.match(source, /automatic_cache_content_verified = \$false/);
   assert.doesNotMatch(source, /automatic_install_matrix_verified/);
+  assert.match(source, /function Invoke-ManualDeviceAuthentication/);
+  assert.match(source, /\[ValidateRange\(1, 3600\)\]\[int\]\$TimeoutSeconds = 900/);
+  assert.match(source, /Start-Process -FilePath "powershell\.exe"[\s\S]*-WindowStyle Normal -PassThru/);
   assert.match(source, /login --device-auth/);
+  assert.match(source, /login status \*> `\$null/);
+  assert.match(source, /\& \$CodexCommand login status \*> \$null/);
+  assert.equal((source.match(/login status \*>/g) ?? []).length, 2);
+  assert.match(source, /WriteAllText\('\$escapedSentinelPath', 'AUTHENTICATED'\)/);
+  assert.ok(
+    source.indexOf("login status *> `$null") < source.indexOf("WriteAllText('$escapedSentinelPath', 'AUTHENTICATED')"),
+  );
+  assert.match(source, /manual-device-authentication-launch/);
+  assert.match(source, /manual-device-authentication-wait/);
+  assert.match(source, /manual-device-authentication-child-result/);
+  assert.match(source, /manual-device-authentication-parent-status/);
+  assert.match(source, /Manual Codex device authentication timed out after \$TimeoutSeconds seconds/);
+  assert.doesNotMatch(source, /login-status-after-manual-gate/);
   assert.doesNotMatch(source, /Start-Transcript/i);
   assert.doesNotMatch(source, /--ignore-user-config/);
   assert.match(source, /& \$FilePath @Arguments 1> \$stdoutPath 2> \$stderrPath/);
@@ -604,6 +660,72 @@ test("bootstrap pins supply chain, keeps auth interactive, and emits fail-closed
     source,
     /foreach \(\$plugin in @\("context-relay", "execution-budget", "async-wait-guard"\)\) \{[\s\S]*Save-Inventory -Name \("state-after-remove-" \+ \$plugin\) -ExpectedInstalled @\(\)[\s\S]*\}\s*foreach \(\$plugin in @\("context-relay", "execution-budget", "async-wait-guard"\)\) \{\s*Add-Plugin -Plugin \$plugin\s*\}/,
   );
+});
+
+test("manual device authentication gate uses a private sentinel and fails closed", windowsOnly, () => {
+  const directory = fixture("sandbox-manual-auth-gate");
+  const source = readFileSync(bootstrap, "utf8");
+  const helperStart = source.indexOf("function Invoke-ManualDeviceAuthentication");
+  const helperEnd = source.indexOf("function Invoke-CodexJson");
+  assert.ok(helperStart >= 0 && helperEnd > helperStart);
+  const helper = source.slice(helperStart, helperEnd);
+  const fakeCodexSuccess = join(directory, "fake-codex-success.cmd");
+  const fakeCodexFailure = join(directory, "fake-codex-failure.cmd");
+  writeFileSync(fakeCodexSuccess, "@exit /b 0\r\n", "utf8");
+  writeFileSync(fakeCodexFailure, "@exit /b 1\r\n", "utf8");
+
+  const runCase = (mode, codexCommand = fakeCodexSuccess, timeoutSeconds = 1) => {
+    const caseRoot = join(directory, mode);
+    mkdirSync(caseRoot, { recursive: true });
+    const script = join(caseRoot, "case.ps1");
+    const escapedRoot = caseRoot.replaceAll("'", "''");
+    const escapedCodex = codexCommand.replaceAll("'", "''");
+    writeFileSync(script, [
+      "$ErrorActionPreference = 'Stop'",
+      "$script:WorkingRoot = '" + escapedRoot + "'",
+      "$script:CurrentStage = 'initialize'",
+      "function Write-Utf8NoBom { param([string]$Path,[AllowEmptyString()][string]$Value) [IO.File]::WriteAllText($Path,$Value,(New-Object Text.UTF8Encoding($false))) }",
+      "function Start-Sleep { param([int]$Milliseconds,[int]$Seconds) }",
+      "function Start-Process {",
+      "  param([string]$FilePath,[object[]]$ArgumentList,[string]$WorkingDirectory,[string]$WindowStyle,[switch]$PassThru)",
+      "  $sentinel = Join-Path $script:WorkingRoot 'manual-device-authentication\\device-authentication-complete.sentinel'",
+      `  if ('${mode}' -in @('success','parent-status-failure')) { [IO.File]::WriteAllText($sentinel,'AUTHENTICATED') }`,
+      `  if ('${mode}' -eq 'invalid-sentinel') { [IO.File]::WriteAllText($sentinel,'INVALID') }`,
+      `  $exited = ('${mode}' -ne 'timeout')`,
+      `  $exitCode = if ('${mode}' -eq 'child-failure') { 1 } else { 0 }`,
+      "  $process = [pscustomobject]@{ HasExited=$exited; ExitCode=$exitCode; Killed=$false }",
+      "  $process | Add-Member ScriptMethod Refresh { }",
+      "  $process | Add-Member ScriptMethod Kill { $this.Killed=$true; $this.HasExited=$true }",
+      "  $process | Add-Member ScriptMethod WaitForExit { param([int]$Milliseconds) return $true }",
+      "  return $process",
+      "}",
+      helper,
+      "try {",
+      `  Invoke-ManualDeviceAuthentication -CodexCommand '${escapedCodex}' -TimeoutSeconds ${timeoutSeconds}`,
+      "  [ordered]@{ result='ok'; stage=$script:CurrentStage } | ConvertTo-Json -Compress",
+      "}",
+      "catch {",
+      "  [ordered]@{ result='failed'; stage=$script:CurrentStage; message=$_.Exception.Message } | ConvertTo-Json -Compress",
+      "}",
+    ].join("\r\n"), "utf8");
+    const completed = ps(script);
+    assert.equal(completed.status, 0, completed.stderr);
+    return JSON.parse(completed.stdout.trim());
+  };
+
+  assert.deepEqual(runCase("success"), {
+    result: "ok",
+    stage: "manual-device-authentication-complete",
+  });
+  assert.match(runCase("child-failure").message, /exited before successful verification/);
+  assert.match(runCase("missing-sentinel").message, /did not produce a valid completion sentinel/);
+  assert.match(runCase("invalid-sentinel").message, /did not produce a valid completion sentinel/);
+  const parentFailure = runCase("parent-status-failure", fakeCodexFailure);
+  assert.equal(parentFailure.stage, "manual-device-authentication-parent-status");
+  assert.match(parentFailure.message, /parent login status check did not confirm authentication/);
+  const timeout = runCase("timeout");
+  assert.equal(timeout.stage, "manual-device-authentication-wait");
+  assert.match(timeout.message, /timed out after 1 seconds/);
 });
 
 test("generated partial compatibility report conforms to the shared runtime evidence contract", windowsOnly, () => {

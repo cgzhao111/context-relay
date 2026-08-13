@@ -115,6 +115,91 @@ function Invoke-CapturedProcess {
     return $exitCode
 }
 
+function Invoke-ManualDeviceAuthentication {
+    param(
+        [Parameter(Mandatory = $true)][string]$CodexCommand,
+        [ValidateRange(1, 3600)][int]$TimeoutSeconds = 900
+    )
+
+    $authRoot = Join-Path $script:WorkingRoot "manual-device-authentication"
+    $authScriptPath = Join-Path $authRoot "device-authentication.ps1"
+    $sentinelPath = Join-Path $authRoot "device-authentication-complete.sentinel"
+    New-Item -ItemType Directory -Force -Path $authRoot | Out-Null
+    if (Test-Path -LiteralPath $sentinelPath) {
+        Remove-Item -LiteralPath $sentinelPath -Force
+    }
+
+    $escapedCodexCommand = $CodexCommand.Replace("'", "''")
+    $escapedSentinelPath = $sentinelPath.Replace("'", "''")
+    $authScript = @"
+`$ErrorActionPreference = 'Stop'
+Set-StrictMode -Version Latest
+try {
+    Write-Host ''
+    Write-Host 'MANUAL CODEX DEVICE AUTHENTICATION' -ForegroundColor Yellow
+    Write-Host 'Complete the browser authorization yourself. Do not share the one-time code.' -ForegroundColor Yellow
+    Write-Host 'This terminal and its login output are not redirected to the evidence directory.' -ForegroundColor Yellow
+    & '$escapedCodexCommand' login --device-auth
+    if (`$LASTEXITCODE -ne 0) {
+        throw 'Device authentication did not complete.'
+    }
+    & '$escapedCodexCommand' login status *> `$null
+    if (`$LASTEXITCODE -ne 0) {
+        throw 'The child login status check did not confirm authentication.'
+    }
+    [System.IO.File]::WriteAllText('$escapedSentinelPath', 'AUTHENTICATED')
+    Write-Host 'Authentication was verified. This terminal will close automatically.' -ForegroundColor Green
+    Start-Sleep -Seconds 2
+    exit 0
+}
+catch {
+    Write-Host 'Authentication was not verified. No runtime probes will run.' -ForegroundColor Red
+    Start-Sleep -Seconds 5
+    exit 1
+}
+"@
+    Write-Utf8NoBom -Path $authScriptPath -Value $authScript
+
+    $script:CurrentStage = "manual-device-authentication-launch"
+    $authProcess = Start-Process -FilePath "powershell.exe" -ArgumentList @(
+        "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $authScriptPath
+    ) -WorkingDirectory $authRoot -WindowStyle Normal -PassThru
+
+    $script:CurrentStage = "manual-device-authentication-wait"
+    $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
+    while (-not $authProcess.HasExited) {
+        if ([DateTime]::UtcNow -ge $deadline) {
+            try {
+                $authProcess.Kill()
+                $authProcess.WaitForExit(5000) | Out-Null
+            }
+            catch {
+                # The timeout remains authoritative even if process cleanup races with exit.
+            }
+            throw "Manual Codex device authentication timed out after $TimeoutSeconds seconds."
+        }
+        Start-Sleep -Milliseconds 500
+        $authProcess.Refresh()
+    }
+
+    $script:CurrentStage = "manual-device-authentication-child-result"
+    if ($authProcess.ExitCode -ne 0) {
+        throw "Manual Codex device authentication exited before successful verification."
+    }
+    if (-not (Test-Path -LiteralPath $sentinelPath -PathType Leaf) -or
+        [System.IO.File]::ReadAllText($sentinelPath) -ne "AUTHENTICATED") {
+        throw "Manual Codex device authentication did not produce a valid completion sentinel."
+    }
+
+    $script:CurrentStage = "manual-device-authentication-parent-status"
+    & $CodexCommand login status *> $null
+    if ($LASTEXITCODE -ne 0) {
+        throw "The parent login status check did not confirm authentication."
+    }
+    Remove-Item -LiteralPath $sentinelPath -Force
+    $script:CurrentStage = "manual-device-authentication-complete"
+}
+
 function Invoke-CodexJson {
     param([string]$Name, [string[]]$Arguments)
     Invoke-CapturedProcess -Name $Name -FilePath $script:CodexCommand -Arguments $Arguments | Out-Null
@@ -623,13 +708,9 @@ try {
 
     Write-Host ""
     Write-Host "MANUAL AUTHENTICATION GATE" -ForegroundColor Yellow
-    Write-Host "The next command opens Codex device authentication. No transcript is active and no authorization code is redirected to evidence." -ForegroundColor Yellow
-    Write-Host "Complete the browser step yourself. Press Ctrl+C to abort without runtime probes." -ForegroundColor Yellow
-    & $script:CodexCommand login --device-auth
-    if ($LASTEXITCODE -ne 0) {
-        throw "Manual Codex device authentication was not completed."
-    }
-    Invoke-CapturedProcess -Name "login-status-after-manual-gate" -FilePath $script:CodexCommand -Arguments @("login", "status") | Out-Null
+    Write-Host "A separate visible terminal will handle Codex device authentication." -ForegroundColor Yellow
+    Write-Host "Complete the browser step yourself. No authorization code or account output is written to evidence." -ForegroundColor Yellow
+    Invoke-ManualDeviceAuthentication -CodexCommand $script:CodexCommand
 
     foreach ($plugin in @("context-relay", "execution-budget", "async-wait-guard")) {
         Remove-Plugin -Plugin $plugin
