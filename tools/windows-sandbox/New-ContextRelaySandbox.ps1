@@ -24,6 +24,83 @@ $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 . (Join-Path $PSScriptRoot "SandboxHarness.Common.ps1")
 
+function New-GitProcess {
+    param(
+        [Parameter(Mandatory = $true)][string]$RepositoryRoot,
+        [Parameter(Mandatory = $true)][string]$Arguments
+    )
+
+    $gitCommand = @(Get-Command git.exe -CommandType Application -ErrorAction Stop)[0]
+    $startInfo = New-Object System.Diagnostics.ProcessStartInfo
+    $startInfo.FileName = $gitCommand.Source
+    $startInfo.WorkingDirectory = $RepositoryRoot
+    $startInfo.Arguments = $Arguments
+    $startInfo.UseShellExecute = $false
+    $startInfo.CreateNoWindow = $true
+    $startInfo.RedirectStandardOutput = $true
+    $startInfo.RedirectStandardError = $true
+
+    $process = New-Object System.Diagnostics.Process
+    $process.StartInfo = $startInfo
+    return $process
+}
+
+function Assert-HarnessCommit {
+    param(
+        [Parameter(Mandatory = $true)][string]$RepositoryRoot,
+        [Parameter(Mandatory = $true)][string]$Commit
+    )
+
+    $process = New-GitProcess -RepositoryRoot $RepositoryRoot -Arguments "--no-replace-objects cat-file -t $Commit"
+    try {
+        if (-not $process.Start()) {
+            throw "Unable to start git while validating HarnessCommit."
+        }
+        $stdoutTask = $process.StandardOutput.ReadToEndAsync()
+        $stderrTask = $process.StandardError.ReadToEndAsync()
+        $process.WaitForExit()
+        $objectType = $stdoutTask.GetAwaiter().GetResult().Trim()
+        $stderr = $stderrTask.GetAwaiter().GetResult().Trim()
+        if ($process.ExitCode -ne 0) {
+            throw "HarnessCommit '$Commit' is not a locally available Git object: $stderr"
+        }
+        if (-not [string]::Equals($objectType, "commit", [System.StringComparison]::Ordinal)) {
+            throw "HarnessCommit '$Commit' must identify a Git commit; found '$objectType'."
+        }
+    }
+    finally {
+        $process.Dispose()
+    }
+}
+
+function Get-CommittedFileSha256 {
+    param(
+        [Parameter(Mandatory = $true)][string]$RepositoryRoot,
+        [Parameter(Mandatory = $true)][string]$Commit,
+        [Parameter(Mandatory = $true)][ValidatePattern('^[A-Za-z0-9._/-]+$')][string]$RepositoryRelativePath
+    )
+
+    $process = New-GitProcess -RepositoryRoot $RepositoryRoot -Arguments "--no-replace-objects cat-file blob ${Commit}:$RepositoryRelativePath"
+    $sha256 = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        if (-not $process.Start()) {
+            throw "Unable to start git while reading the fixed harness commit."
+        }
+        $stderrTask = $process.StandardError.ReadToEndAsync()
+        $digest = $sha256.ComputeHash($process.StandardOutput.BaseStream)
+        $process.WaitForExit()
+        $stderr = $stderrTask.GetAwaiter().GetResult().Trim()
+        if ($process.ExitCode -ne 0) {
+            throw "Unable to read '$RepositoryRelativePath' from HarnessCommit '$Commit': $stderr"
+        }
+        return ([BitConverter]::ToString($digest)).Replace("-", "").ToLowerInvariant()
+    }
+    finally {
+        $sha256.Dispose()
+        $process.Dispose()
+    }
+}
+
 $repositoryRoot = Get-CanonicalPath -Path (Join-Path $PSScriptRoot "..\..")
 $resolvedEvidence = Assert-SafeEvidenceDirectory -Path $EvidenceDirectory -RepositoryRoot $repositoryRoot -RequireEmpty
 $resolvedConfig = Assert-NewHostArtifactPath -Path $ConfigPath -RepositoryRoot $repositoryRoot
@@ -52,10 +129,9 @@ if (-not $SkipWindowsSandboxCheck) {
     }
 }
 
-$bootstrapPath = Join-Path $PSScriptRoot "bootstrap.ps1"
-$bootstrapSha256 = (Get-FileHash -LiteralPath $bootstrapPath -Algorithm SHA256).Hash.ToLowerInvariant()
-$partialReportHelperPath = Join-Path $PSScriptRoot "New-CompatibilityPartialReport.ps1"
-$partialReportHelperSha256 = (Get-FileHash -LiteralPath $partialReportHelperPath -Algorithm SHA256).Hash.ToLowerInvariant()
+Assert-HarnessCommit -RepositoryRoot $repositoryRoot -Commit $HarnessCommit
+$bootstrapSha256 = Get-CommittedFileSha256 -RepositoryRoot $repositoryRoot -Commit $HarnessCommit -RepositoryRelativePath "tools/windows-sandbox/bootstrap.ps1"
+$partialReportHelperSha256 = Get-CommittedFileSha256 -RepositoryRoot $repositoryRoot -Commit $HarnessCommit -RepositoryRelativePath "tools/windows-sandbox/New-CompatibilityPartialReport.ps1"
 
 $baselineArguments = @(
     "-NoLogo",
