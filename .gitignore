@@ -6,6 +6,7 @@ Thumbs.db
 *.tmp
 *.local.json
 .execution-budget/
+.runtime-evidence-private/
 handoff.private.json
 PROJECT_HANDOFF.private.md
 .context-relay-public-evidence-denylist

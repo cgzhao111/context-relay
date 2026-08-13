@@ -1,0 +1,60 @@
+{
+  "schema_version": "1.0.0",
+  "report_id": "synthetic-contract-example",
+  "tested_at": "2026-08-12T00:00:00Z",
+  "reporter_kind": "automation",
+  "plugin": {
+    "id": "bundle",
+    "version": "0.3.0-rc.2",
+    "repository_commit": "dd3cbfb1f10c29808193dee167f4d595e7046f38"
+  },
+  "host": {
+    "surface": "synthetic-contract",
+    "version": "not_exposed",
+    "os": "not_exposed",
+    "os_version": "not_exposed",
+    "architecture": "not_exposed"
+  },
+  "model": {
+    "name": "not_exposed",
+    "version": "not_exposed",
+    "reasoning_effort": "not_exposed"
+  },
+  "installation": {
+    "method": "not-applicable",
+    "fresh_context": false,
+    "commands_or_actions": [],
+    "status": "not-run"
+  },
+  "input": {
+    "kind": "synthetic",
+    "fixture_ref": "evaluation/compatibility/README.md",
+    "source_completeness": "NOT_APPLICABLE"
+  },
+  "workflow": "marketplace-install-matrix",
+  "trigger": {
+    "mode": "not-applicable",
+    "status": "not-verifiable"
+  },
+  "steps": [
+    {
+      "id": "contract-only",
+      "action": "Validate the example against the public evidence contract.",
+      "expected": "The schema accepts the synthetic example without asserting a runtime result.",
+      "observed": "This file is a contract fixture and does not contain a host observation.",
+      "status": "not-verifiable"
+    }
+  ],
+  "checks": [],
+  "result": "partial",
+  "failures": [],
+  "unverified_boundaries": [
+    "No plugin installation or model runtime is represented by this synthetic fixture."
+  ],
+  "privacy": {
+    "public_evidence_scan": "pass",
+    "redactions": [],
+    "raw_private_artifacts_excluded": true
+  },
+  "evidence": []
+}

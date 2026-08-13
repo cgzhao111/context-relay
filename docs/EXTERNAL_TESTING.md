@@ -44,8 +44,17 @@ before drawing comparative conclusions.
 
 ## Required result fields
 
-Submit a Markdown explanation plus a machine-readable JSON object containing at
-least:
+For new runtime and plugin-isolation observations, use the versioned
+[`report.schema.json`](../evaluation/compatibility/report.schema.json) contract
+and its validator instead of inventing a report shape:
+
+```powershell
+npm run evidence:validate -- .\report.json --check-evidence --expected-commit <40-character-commit>
+npm run check:public-evidence
+```
+
+The following older minimal shape remains useful for handoff-only discussion
+posts, but it is not a substitute for the strict runtime contract:
 
 ```json
 {

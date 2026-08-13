@@ -8,6 +8,14 @@ Guard** are optional Betas that can be selected independently. Real
 release-candidate cache, install, removal, and fresh-task Skill visibility remain
 publication gates for the optional plugins.
 
+The repository now includes a
+[zero-pollution runtime-evidence harness](docs/RUNTIME_EVIDENCE.md): disposable
+GitHub Actions runners verify Marketplace install/cache/removal behavior, while
+Windows Sandbox is reserved for fresh-task Skill discovery and explicit
+invocation. The maintainer's normal Codex configuration is never used to run
+the install matrices and is not mutated; the Sandbox launcher only captures a
+read-only before/after inventory digest to detect host drift.
+
 | Plugin | Status | Purpose |
 | --- | --- | --- |
 | `context-relay` | Stable | Evidence-backed project handoffs and freshness checks |
@@ -235,6 +243,7 @@ Node.js 20 or later is required for the optional local checks. There are no runt
 ```bash
 npm test
 npm run eval:repro
+npm run evidence:validate -- evaluation/compatibility/example-contract-report.json
 npm run snapshot -- --root . --output workspace-snapshot.json
 npm run validate:handoff -- examples/basic/handoff.json
 npm run validate:handoff -- <path-to-handoff.json> --project-root . --check-digests --strict
@@ -244,6 +253,11 @@ npm run wait:plan -- --request wait-request.json
 ```
 
 The snapshot command is read-only with respect to the inspected repository. It writes only the explicitly requested output file, and the resulting JSON is shaped for the `snapshot` field of a handoff. The first validation command checks the synthetic example's protocol and privacy content; the second also checks a real handoff against the current Git and file state. The public budget run records are intentionally marked `SYNTHETIC`, so the calibration command demonstrates safe exclusion rather than producing a usable model. The wait planner is deterministic and audits a caller-supplied description of an already-running tool; it does not start, stop, or observe the process itself. The repository gate validates that the three marketplace entries resolve to separate plugin roots and that the release bundle contains all three roots. Real Codex CLI install/upgrade/removal and fresh-task triggering checks are still required on the published release candidate.
+
+Runtime evidence uses a strict JSON contract with exact revisions, individual
+step outcomes, privacy status, unresolved boundaries, and artifact SHA256
+values. A screenshot alone is never treated as compatibility proof. See
+[`docs/RUNTIME_EVIDENCE.md`](docs/RUNTIME_EVIDENCE.md).
 
 ## Handoff pack
 

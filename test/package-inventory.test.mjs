@@ -30,6 +30,14 @@ test("release bundle contains all three selectable plugin manifests and no priva
     "plugins/async-wait-guard/skills/async-wait-guard/agents/openai.yaml",
     "plugins/async-wait-guard/skills/async-wait-guard/scripts/plan-wait.mjs",
     "plugins/async-wait-guard/skills/async-wait-guard/references/policy.md",
+    "evaluation/compatibility/report.schema.json",
+    "evaluation/compatibility/validate-report.mjs",
+    "tools/run-plugin-install-matrix.ps1",
+    "tools/windows-sandbox/bootstrap.ps1",
+    "tools/windows-sandbox/Invoke-HostBaseline.ps1",
+    "tools/windows-sandbox/New-CompatibilityPartialReport.ps1",
+    "tools/windows-sandbox/New-ContextRelaySandbox.ps1",
+    "tools/windows-sandbox/SandboxHarness.Common.ps1",
   ]) {
     assert.ok(paths.has(required), `release bundle missing ${required}`);
   }
@@ -39,6 +47,7 @@ test("release bundle contains all three selectable plugin manifests and no priva
     assert.equal(path.startsWith("test/"), false, `release bundle contains ${path}`);
     assert.equal(path.startsWith(".github/"), false, `release bundle contains ${path}`);
     assert.equal(path.startsWith(".execution-budget/"), false, `release bundle contains ${path}`);
+    assert.equal(path.startsWith(".runtime-evidence-private/"), false, `release bundle contains ${path}`);
     assert.doesNotMatch(path, /(?:private|raw[-_]?transcript|chat[-_]?log)/i);
   }
 });

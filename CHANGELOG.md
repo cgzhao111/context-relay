@@ -21,6 +21,11 @@ versioning while the public protocol is versioned independently.
   adopting its individual savings observation as a fixed or general claim.
 - Kept real release-candidate cache/install/upgrade/removal and fresh-task Skill
   triggering as unverified publication gates.
+- Added the zero-pollution runtime-evidence infrastructure: an ephemeral
+  Windows install/removal matrix, a Windows Sandbox fresh-task harness, a
+  strict machine-readable compatibility schema, evidence digests, and privacy
+  publication gates. The harness is implemented without treating an unrun
+  Sandbox scenario as verified runtime evidence.
 
 ## 0.3.0-rc.1 — 2026-08-12 (pre-release candidate)
 

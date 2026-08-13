@@ -11,6 +11,7 @@ or repository layout.
 | Self-handoff dogfood v1 | `d5cd032e9b3db82f29a194d687f2608d3cc2e419` | `VISIBLE_CONTEXT_ONLY` | Codex host; version `not_exposed` | `not_exposed` | Pickup coverage, strict validation, five file digests, Git, CI, release, installation, and ignored private artifacts | Passed for the single published observation |
 | Marketplace install v0.2.0 | `v0.2.0` / `d97f96be47e14d46c4012e5d9ae1924df686d580` | Not applicable | Codex CLI `0.144.5` on Windows, tested 2026-08-12 | Not applicable | Git marketplace refresh, plugin install, installed version check, official plugin validation, and official skill validation | Passed |
 | Three-plugin selection pre-release | Local release candidate on 2026-08-12; not a public revision | Not applicable | Static repository and release-bundle gates | Not applicable | Separate `plugins/context-relay`, `plugins/execution-budget`, and `plugins/async-wait-guard` source roots, Marketplace identities, manifests, Skill catalogs, exact entries, release inventory | Passed structurally; real Codex CLI cache/install/upgrade/removal and fresh-task visibility or triggering remain publication blockers |
+| Zero-pollution evidence harness | `dd3cbfb1f10c29808193dee167f4d595e7046f38` is the pinned plugin revision; harness revision must be recorded separately | Not applicable | GitHub Actions `windows-latest` plus Windows Sandbox | Recorded per report | Ephemeral install/remove matrix, fresh-task explicit Skill probes, strict report schema, SHA256 and public-evidence scan | Harness implemented; no runtime result is published until the generated reports pass and are reviewed |
 
 The detailed aggregate result is in
 [`evaluation/dogfood/context-relay-self-handoff-v1/`](../evaluation/dogfood/context-relay-self-handoff-v1/).
@@ -61,3 +62,7 @@ Follow [`EXTERNAL_TESTING.md`](EXTERNAL_TESTING.md). A qualifying report must
 name the public revision, declare source completeness, use synthetic or public
 inputs, include exact commands or actions, separate observed facts from
 interpretation, and record failures as well as successes.
+
+The maintainer runtime procedure is documented in
+[`RUNTIME_EVIDENCE.md`](RUNTIME_EVIDENCE.md). The schema and hashes, rather
+than screenshots alone, determine whether a run qualifies.

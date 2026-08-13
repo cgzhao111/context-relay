@@ -1,0 +1,202 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cgzhao111/context-relay/blob/main/evaluation/compatibility/report.schema.json",
+  "title": "Context Relay runtime compatibility evidence",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "report_id",
+    "tested_at",
+    "reporter_kind",
+    "plugin",
+    "host",
+    "model",
+    "installation",
+    "input",
+    "workflow",
+    "trigger",
+    "steps",
+    "checks",
+    "result",
+    "failures",
+    "unverified_boundaries",
+    "privacy",
+    "evidence"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0.0" },
+    "report_id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{2,63}$" },
+    "tested_at": { "type": "string", "format": "date-time" },
+    "reporter_kind": { "enum": ["maintainer", "external", "automation"] },
+    "plugin": { "$ref": "#/$defs/plugin" },
+    "host": { "$ref": "#/$defs/host" },
+    "model": { "$ref": "#/$defs/model" },
+    "installation": { "$ref": "#/$defs/installation" },
+    "input": { "$ref": "#/$defs/input" },
+    "workflow": {
+      "enum": [
+        "marketplace-install-matrix",
+        "handoff-create",
+        "handoff-resume",
+        "handoff-safety",
+        "budget-preview",
+        "budget-conflict",
+        "wait-policy",
+        "wait-host-behavior",
+        "combined-removal"
+      ]
+    },
+    "trigger": { "$ref": "#/$defs/trigger" },
+    "steps": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/step" }
+    },
+    "checks": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/check" }
+    },
+    "result": { "enum": ["success", "partial", "failure"] },
+    "failures": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+    },
+    "unverified_boundaries": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1, "maxLength": 500 }
+    },
+    "privacy": { "$ref": "#/$defs/privacy" },
+    "evidence": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/evidence" }
+    }
+  },
+  "$defs": {
+    "safeText": { "type": "string", "minLength": 1, "maxLength": 500 },
+    "relativePath": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 240,
+      "pattern": "^(?![A-Za-z]:)(?!(?:\\u002f|\\\\))(?!.*(?:^|(?:\\u002f|\\\\))\\.\\.(?:(?:\\u002f|\\\\)|$)).+$"
+    },
+    "plugin": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "version", "repository_commit"],
+      "properties": {
+        "id": { "enum": ["context-relay", "execution-budget", "async-wait-guard", "bundle"] },
+        "version": { "type": "string", "pattern": "^(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)\\.(?:0|[1-9][0-9]*)(?:-[0-9A-Za-z.-]+)?(?:\\+[0-9A-Za-z.-]+)?$" },
+        "repository_commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+      }
+    },
+    "host": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["surface", "version", "os", "os_version", "architecture"],
+      "properties": {
+        "surface": { "enum": ["synthetic-contract", "github-actions-windows", "codex-cli-windows-sandbox", "codex-desktop-windows-sandbox", "codex-cli", "codex-desktop"] },
+        "version": { "$ref": "#/$defs/safeText" },
+        "os": { "enum": ["Windows", "macOS", "Linux", "not_exposed"] },
+        "os_version": { "$ref": "#/$defs/safeText" },
+        "architecture": { "enum": ["x64", "arm64", "not_exposed"] }
+      }
+    },
+    "model": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "version", "reasoning_effort"],
+      "properties": {
+        "name": { "$ref": "#/$defs/safeText" },
+        "version": { "$ref": "#/$defs/safeText" },
+        "reasoning_effort": { "$ref": "#/$defs/safeText" }
+      }
+    },
+    "installation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["method", "fresh_context", "commands_or_actions", "status"],
+      "properties": {
+        "method": { "enum": ["marketplace", "skill-copy", "not-applicable"] },
+        "fresh_context": { "type": "boolean" },
+        "commands_or_actions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/safeText" }
+        },
+        "status": { "enum": ["success", "partial", "failure", "not-run"] }
+      }
+    },
+    "input": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "fixture_ref", "source_completeness"],
+      "properties": {
+        "kind": { "enum": ["synthetic", "public-repository", "not-applicable"] },
+        "fixture_ref": { "$ref": "#/$defs/relativePath" },
+        "source_completeness": { "enum": ["FULL_THREAD_READ", "PARTIAL_THREAD_READ", "USER_TRANSCRIPT", "VISIBLE_CONTEXT_ONLY", "NOT_APPLICABLE"] }
+      }
+    },
+    "trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "status"],
+      "properties": {
+        "mode": { "enum": ["explicit", "implicit", "none-expected", "not-applicable"] },
+        "status": { "enum": ["observed", "not-observed", "not-verifiable", "not-applicable"] }
+      }
+    },
+    "step": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "action", "expected", "observed", "status"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[a-z][a-z0-9-]{1,47}$" },
+        "action": { "$ref": "#/$defs/safeText" },
+        "expected": { "$ref": "#/$defs/safeText" },
+        "observed": { "$ref": "#/$defs/safeText" },
+        "status": { "enum": ["pass", "fail", "not-verifiable"] },
+        "evidence_ref": { "$ref": "#/$defs/relativePath" }
+      }
+    },
+    "check": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "status", "value"],
+      "properties": {
+        "name": { "type": "string", "pattern": "^[a-z][a-z0-9_-]{1,63}$" },
+        "status": { "enum": ["pass", "fail", "not-verifiable"] },
+        "value": {
+          "anyOf": [
+            { "type": "string", "maxLength": 500 },
+            { "type": "number" },
+            { "type": "boolean" },
+            { "type": "null" }
+          ]
+        }
+      }
+    },
+    "privacy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["public_evidence_scan", "redactions", "raw_private_artifacts_excluded"],
+      "properties": {
+        "public_evidence_scan": { "enum": ["pass", "fail", "not-run"] },
+        "redactions": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/safeText" }
+        },
+        "raw_private_artifacts_excluded": { "type": "boolean" }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["path", "sha256", "media_type"],
+      "properties": {
+        "path": { "$ref": "#/$defs/relativePath" },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+        "media_type": { "enum": ["application/json", "application/jsonl", "text/plain", "text/markdown", "image/png", "image/gif", "video/mp4"] }
+      }
+    }
+  }
+}
