@@ -10,9 +10,11 @@ profile.
 - Only one user-selected, existing, empty evidence directory is mapped into the Sandbox.
 - The repository, the host user profile, and the host `.codex` directory are never mapped.
 - The host baseline commands only read `codex --version` and `codex plugin list --available --json`.
-- Device authentication is an explicit interactive gate. Its command is not redirected to an
-  evidence file and PowerShell transcription is not enabled.
-- Sandbox networking is enabled for downloads and device authentication. The `.wsb` format used
+- Codex authentication is an explicit interactive gate. The harness tries device-code
+  authentication first. If that method is unavailable, the same visible, unrecorded terminal
+  falls back to the official `codex login` browser flow inside Windows Sandbox. Neither command is
+  redirected to an evidence file, and PowerShell transcription is not enabled.
+- Sandbox networking is enabled for downloads and Codex authentication. The `.wsb` format used
   here does not enforce an egress allowlist; the scripts separately pin expected download hosts,
   versions, commits, and package digests where applicable.
 - Sandbox output is private raw evidence. It must not be committed or published without human
@@ -57,9 +59,13 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File `
 Start-Process "$private\context-relay-runtime.wsb"
 ```
 
-Inside Windows Sandbox, complete the device authorization only when the explicit yellow manual
-gate appears. When the run ends, inspect the evidence while it remains private and close Windows
-Sandbox.
+Inside Windows Sandbox, complete authorization only when the explicit yellow manual gate appears.
+If device-code authentication fails, complete the browser sign-in—and MFA if your account
+requires it—in the Sandbox browser, not on the host. Do not copy the browser-login URL to the host:
+its localhost callback belongs to the Sandbox. Do not share or screenshot a one-time code or
+authentication page, copy `auth.json` or other Sandbox authentication state, or publish login
+output. When the run ends, inspect the evidence while it remains private and close Windows
+Sandbox; closing it destroys the Sandbox login cache, browser state, and login logs.
 
 After Sandbox closes, compare the host plugin inventory:
 
