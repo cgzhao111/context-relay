@@ -416,12 +416,12 @@ function Save-StateSnapshot {
   Assert-SetEqual -Actual $cachedNames -Expected $ExpectedInstalled -Label "$StepId cached plugins"
 
   $script:stage = "$StepId-cache-namespace"
-  $namespaceDirectories = if (Test-Path -LiteralPath $cacheNamespace -PathType Container) {
-    @(Get-ChildItem -LiteralPath $cacheNamespace -Directory -Force | ForEach-Object { $_.Name })
-  }
-  else {
-    @()
-  }
+  $namespaceDirectories = @(
+    if (Test-Path -LiteralPath $cacheNamespace -PathType Container) {
+      Get-ChildItem -LiteralPath $cacheNamespace -Directory -Force | ForEach-Object { $_.Name }
+    }
+  )
+  $details.diagnostics.lastSnapshot.cacheNamespaceEntries = @($namespaceDirectories | Sort-Object)
   Assert-SetEqual -Actual $namespaceDirectories -Expected $ExpectedInstalled -Label "$StepId cache namespace"
 
   $script:stage = "$StepId-record"

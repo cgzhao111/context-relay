@@ -110,6 +110,8 @@ test("harness refuses CODEX_HOME overrides and emits bounded evidence", () => {
   assert.match(harness, /uniqueEntryCount = @\(\$entryNames \| Sort-Object -Unique\)\.Count/);
   assert.match(harness, /\$duplicateGroups = @\(\$entryNames \| Group-Object \| Where-Object \{ \$_\.Count -ne 1 \}\)/);
   assert.match(harness, /if \(\$duplicateGroups\.Count -ne 0\)/);
+  assert.match(harness, /\$namespaceDirectories = @\([\s\S]*Test-Path -LiteralPath \$cacheNamespace[\s\S]*\)/);
+  assert.match(harness, /cacheNamespaceEntries = @\(\$namespaceDirectories \| Sort-Object\)/);
   assert.doesNotMatch(harness, /Set-Content[^\r\n]*(?:\$stdout|\$stderr)/i);
   const evidenceProjection = harness.slice(
     harness.indexOf("$sanitizedEntries ="),
@@ -154,6 +156,36 @@ test("PowerShell tree inventory binds exact relative paths and bytes", {
     const changed = runTreeProbe(probePath, source, cache);
     assert.notEqual(changed.source.treeSha256, changed.cache.treeSha256);
     assert.notEqual(changed.source.files[1].sha256, changed.cache.files[1].sha256);
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test("an absent cache namespace remains an empty collection", {
+  skip: process.platform !== "win32",
+}, () => {
+  const directory = mkdtempSync(join(tmpdir(), "context-relay-empty-cache-"));
+  try {
+    const start = harness.indexOf("  $namespaceDirectories = @(");
+    const end = harness.indexOf("  $script:stage = \"$StepId-record\"");
+    assert.ok(start >= 0 && end > start);
+    const probePath = join(directory, "probe.ps1");
+    const missingCache = join(directory, "missing-cache");
+    writeFileSync(probePath, [
+      "param([string]$CacheNamespace)",
+      "$ErrorActionPreference = 'Stop'",
+      "$StepId = 'empty-cache'",
+      "$ExpectedInstalled = @()",
+      "$details = [ordered]@{ diagnostics = [ordered]@{ lastSnapshot = [ordered]@{} } }",
+      "function Assert-SetEqual { param([Parameter(Mandatory)][AllowEmptyCollection()][string[]]$Actual,[Parameter(Mandatory)][AllowEmptyCollection()][string[]]$Expected,[Parameter(Mandatory)][string]$Label); if ((@($Actual) -join ',') -ne (@($Expected) -join ',')) { throw $Label } }",
+      harness.slice(start, end),
+      "[ordered]@{ isNull = ($null -eq $namespaceDirectories); count = @($namespaceDirectories).Count; diagnostics = @($details.diagnostics.lastSnapshot.cacheNamespaceEntries).Count } | ConvertTo-Json -Compress",
+    ].join("\n"), "utf8");
+    const execution = spawnSync("powershell.exe", [
+      "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", probePath, missingCache,
+    ], { cwd: root, encoding: "utf8" });
+    assert.equal(execution.status, 0, execution.stderr || execution.stdout);
+    assert.deepEqual(JSON.parse(execution.stdout), { isNull: false, count: 0, diagnostics: 0 });
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
