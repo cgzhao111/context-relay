@@ -627,7 +627,8 @@ test("bootstrap pins supply chain, keeps auth interactive, and emits fail-closed
   assert.doesNotMatch(source, /automatic_install_matrix_verified/);
   assert.match(source, /function Invoke-ManualDeviceAuthentication/);
   assert.match(source, /\[ValidateRange\(1, 3600\)\]\[int\]\$TimeoutSeconds = 900/);
-  assert.match(source, /Start-Process -FilePath "powershell\.exe"[\s\S]*-WindowStyle Normal -PassThru/);
+  assert.match(source, /1-CLICK-HERE-CODEX-AUTHORIZATION\.cmd/);
+  assert.doesNotMatch(source, /Start-Process -FilePath "powershell\.exe"[\s\S]*-WindowStyle Normal -PassThru/);
   assert.match(source, /login --device-auth/);
   assert.match(source, /login status \*> `\$null/);
   assert.match(source, /\& \$CodexCommand login status \*> \$null/);
@@ -636,9 +637,8 @@ test("bootstrap pins supply chain, keeps auth interactive, and emits fail-closed
   assert.ok(
     source.indexOf("login status *> `$null") < source.indexOf("WriteAllText('$escapedSentinelPath', 'AUTHENTICATED')"),
   );
-  assert.match(source, /manual-device-authentication-launch/);
-  assert.match(source, /manual-device-authentication-wait/);
-  assert.match(source, /manual-device-authentication-child-result/);
+  assert.match(source, /manual-device-authentication-await-user/);
+  assert.match(source, /manual-device-authentication-user-result/);
   assert.match(source, /manual-device-authentication-parent-status/);
   assert.match(source, /Manual Codex device authentication timed out after \$TimeoutSeconds seconds/);
   assert.doesNotMatch(source, /login-status-after-manual-gate/);
@@ -684,24 +684,22 @@ test("manual device authentication gate uses a private sentinel and fails closed
       "$ErrorActionPreference = 'Stop'",
       "$script:WorkingRoot = '" + escapedRoot + "'",
       "$script:CurrentStage = 'initialize'",
+      "$script:TestSleepCount = 0",
+      "$env:USERPROFILE = '" + escapedRoot + "'",
       "function Write-Utf8NoBom { param([string]$Path,[AllowEmptyString()][string]$Value) [IO.File]::WriteAllText($Path,$Value,(New-Object Text.UTF8Encoding($false))) }",
-      "function Start-Sleep { param([int]$Milliseconds,[int]$Seconds) }",
-      "function Start-Process {",
-      "  param([string]$FilePath,[object[]]$ArgumentList,[string]$WorkingDirectory,[string]$WindowStyle,[switch]$PassThru)",
-      "  $sentinel = Join-Path $script:WorkingRoot 'manual-device-authentication\\device-authentication-complete.sentinel'",
-      `  if ('${mode}' -in @('success','parent-status-failure')) { [IO.File]::WriteAllText($sentinel,'AUTHENTICATED') }`,
-      `  if ('${mode}' -eq 'invalid-sentinel') { [IO.File]::WriteAllText($sentinel,'INVALID') }`,
-      `  $exited = ('${mode}' -ne 'timeout')`,
-      `  $exitCode = if ('${mode}' -eq 'child-failure') { 1 } else { 0 }`,
-      "  $process = [pscustomobject]@{ HasExited=$exited; ExitCode=$exitCode; Killed=$false }",
-      "  $process | Add-Member ScriptMethod Refresh { }",
-      "  $process | Add-Member ScriptMethod Kill { $this.Killed=$true; $this.HasExited=$true }",
-      "  $process | Add-Member ScriptMethod WaitForExit { param([int]$Milliseconds) return $true }",
-      "  return $process",
+      "function Start-Sleep {",
+      "  param([int]$Milliseconds,[int]$Seconds)",
+      "  $script:TestSleepCount++",
+      "  $authRoot = Join-Path $script:WorkingRoot 'manual-device-authentication'",
+      `  if ($script:TestSleepCount -eq 1 -and '${mode}' -in @('success','parent-status-failure')) { [IO.File]::WriteAllText((Join-Path $authRoot 'device-authentication-complete.sentinel'),'AUTHENTICATED') }`,
+      `  if ($script:TestSleepCount -eq 1 -and '${mode}' -eq 'invalid-sentinel') { [IO.File]::WriteAllText((Join-Path $authRoot 'device-authentication-complete.sentinel'),'INVALID') }`,
+      `  if ($script:TestSleepCount -eq 1 -and '${mode}' -eq 'launcher-failure') { [IO.File]::WriteAllText((Join-Path $authRoot 'device-authentication-failed.sentinel'),'FAILED') }`,
+      `  if ('${mode}' -eq 'timeout') { Microsoft.PowerShell.Utility\\Start-Sleep -Milliseconds 550 }`,
       "}",
+      "New-Item -ItemType Directory -Force -Path (Join-Path $env:USERPROFILE 'Desktop') | Out-Null",
       helper,
       "try {",
-      `  Invoke-ManualDeviceAuthentication -CodexCommand '${escapedCodex}' -TimeoutSeconds ${timeoutSeconds}`,
+      `  Invoke-ManualDeviceAuthentication -CodexCommand '${escapedCodex}' -TimeoutSeconds ${timeoutSeconds} -DesktopPath (Join-Path $env:USERPROFILE 'Desktop')`,
       "  [ordered]@{ result='ok'; stage=$script:CurrentStage } | ConvertTo-Json -Compress",
       "}",
       "catch {",
@@ -710,21 +708,20 @@ test("manual device authentication gate uses a private sentinel and fails closed
     ].join("\r\n"), "utf8");
     const completed = ps(script);
     assert.equal(completed.status, 0, completed.stderr);
-    return JSON.parse(completed.stdout.trim());
+    return JSON.parse(completed.stdout.trim().split(/\r?\n/).at(-1));
   };
 
   assert.deepEqual(runCase("success"), {
     result: "ok",
     stage: "manual-device-authentication-complete",
   });
-  assert.match(runCase("child-failure").message, /exited before successful verification/);
-  assert.match(runCase("missing-sentinel").message, /did not produce a valid completion sentinel/);
+  assert.match(runCase("launcher-failure").message, /launcher reported failure/);
   assert.match(runCase("invalid-sentinel").message, /did not produce a valid completion sentinel/);
   const parentFailure = runCase("parent-status-failure", fakeCodexFailure);
   assert.equal(parentFailure.stage, "manual-device-authentication-parent-status");
   assert.match(parentFailure.message, /parent login status check did not confirm authentication/);
   const timeout = runCase("timeout");
-  assert.equal(timeout.stage, "manual-device-authentication-wait");
+  assert.equal(timeout.stage, "manual-device-authentication-await-user");
   assert.match(timeout.message, /timed out after 1 seconds/);
 });
 
