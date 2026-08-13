@@ -34,7 +34,9 @@ test("Windows evidence workflow pins the source and executable toolchain", () =>
   assert.match(workflow, /runs-on:\s*windows-latest/);
   assert.match(workflow, /NODE_VERSION:\s*22\.23\.2/);
   assert.match(workflow, /CODEX_CLI_VERSION:\s*0\.144\.5/);
-  assert.match(workflow, /NPM_CONFIG_PREFIX:\s*\$\{\{ runner\.temp \}\}\\codex-npm-prefix/);
+  assert.match(workflow, /\$npmPrefix = Join-Path \$env:RUNNER_TEMP 'codex-npm-prefix'/);
+  assert.match(workflow, /"NPM_CONFIG_PREFIX=\$npmPrefix"[^\r\n]*\$env:GITHUB_ENV/);
+  assert.doesNotMatch(workflow, /NPM_CONFIG_PREFIX:\s*\$\{\{ runner\.temp/);
   assert.ok(workflow.includes(`NODE_ZIP_SHA256: ${nodeChecksum}`));
   assert.ok(workflow.includes(`CODEX_NPM_INTEGRITY: ${codexIntegrity}`));
   assert.ok(workflow.includes(`CODEX_WINDOWS_NPM_INTEGRITY: ${codexWindowsIntegrity}`));

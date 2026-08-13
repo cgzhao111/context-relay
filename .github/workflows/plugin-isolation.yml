@@ -49,8 +49,6 @@ jobs:
       MINGIT_ARCHIVE_NAME: MinGit-2.55.0.4-64-bit.zip
       MINGIT_ARCHIVE_SHA256: 4e03f94c2ffbf70be337e005cee02661c732dbfc81031a078bda9299b9a7d644
       SOURCE_COMMIT: ${{ github.event_name == 'workflow_dispatch' && inputs.source_commit || 'dd3cbfb1f10c29808193dee167f4d595e7046f38' }}
-      EVIDENCE_DIR: ${{ runner.temp }}\context-relay-plugin-isolation
-      NPM_CONFIG_PREFIX: ${{ runner.temp }}\codex-npm-prefix
 
     steps:
       - name: Check out evidence harness
@@ -61,8 +59,12 @@ jobs:
       - name: Prepare evidence directory
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force -Path $env:EVIDENCE_DIR, $env:NPM_CONFIG_PREFIX | Out-Null
-          $env:NPM_CONFIG_PREFIX | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+          $evidenceDirectory = Join-Path $env:RUNNER_TEMP 'context-relay-plugin-isolation'
+          $npmPrefix = Join-Path $env:RUNNER_TEMP 'codex-npm-prefix'
+          New-Item -ItemType Directory -Force -Path $evidenceDirectory, $npmPrefix | Out-Null
+          "EVIDENCE_DIR=$evidenceDirectory" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          "NPM_CONFIG_PREFIX=$npmPrefix" | Out-File -FilePath $env:GITHUB_ENV -Encoding utf8 -Append
+          $npmPrefix | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
 
       - name: Install checksum-pinned Node.js
         shell: pwsh

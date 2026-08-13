@@ -22,6 +22,7 @@ const bootstrap = join(harnessRoot, "bootstrap.ps1");
 const partialReport = join(harnessRoot, "New-CompatibilityPartialReport.ps1");
 const contractValidator = join(root, "evaluation", "compatibility", "validate-report.mjs");
 const temporary = [];
+const windowsOnly = { skip: process.platform !== "win32" };
 
 function fixture(name = "sandbox-harness") {
   const path = mkdtempSync(join(tmpdir(), `${name}-`));
@@ -59,7 +60,7 @@ test.after(() => {
   for (const path of temporary) rmSync(path, { recursive: true, force: true });
 });
 
-test("all PowerShell harness files parse without syntax errors", () => {
+test("all PowerShell harness files parse without syntax errors", windowsOnly, () => {
   const command = [
     "$failed=$false",
     `Get-ChildItem -LiteralPath '${harnessRoot.replaceAll("'", "''")}' -Filter '*.ps1' | ForEach-Object {`,
@@ -73,7 +74,7 @@ test("all PowerShell harness files parse without syntax errors", () => {
   assert.equal(result.status, 0, result.stderr);
 });
 
-test("generator emits a single hardened evidence mapping and captures an offline host baseline", () => {
+test("generator emits a single hardened evidence mapping and captures an offline host baseline", windowsOnly, () => {
   const directory = fixture("sandbox-safe-config");
   const evidence = join(directory, "evidence & output");
   const privateRoot = join(directory, "private files");
@@ -119,7 +120,7 @@ test("generator emits a single hardened evidence mapping and captures an offline
   assert.equal(captured.inventory.target_plugins.length, 3);
 });
 
-test("generator fails closed for non-empty, repository, and .codex evidence paths", () => {
+test("generator fails closed for non-empty, repository, and .codex evidence paths", windowsOnly, () => {
   const directory = fixture("sandbox-rejected-paths");
   const privateRoot = join(directory, "private");
   mkdirSync(privateRoot);
@@ -151,7 +152,7 @@ test("generator fails closed for non-empty, repository, and .codex evidence path
   assert.match(codexResult.stderr, /\.codex/i);
 });
 
-test("host artifact paths reject a junction parent", (t) => {
+test("host artifact paths reject a junction parent", windowsOnly, (t) => {
   const directory = fixture("sandbox-junction");
   const evidence = join(directory, "evidence");
   const realPrivate = join(directory, "real-private");
@@ -178,7 +179,7 @@ test("host artifact paths reject a junction parent", (t) => {
   assert.match(result.stderr, /Reparse points are not accepted/i);
 });
 
-test("generator rejects identical config and baseline paths before writing either artifact", () => {
+test("generator rejects identical config and baseline paths before writing either artifact", windowsOnly, () => {
   const directory = fixture("sandbox-identical-artifacts");
   const evidence = join(directory, "evidence");
   const privateRoot = join(directory, "private");
@@ -201,7 +202,7 @@ test("generator rejects identical config and baseline paths before writing eithe
   assert.equal(existsSync(sharedPath), false);
 });
 
-test("generator never overwrites existing config or baseline artifacts", () => {
+test("generator never overwrites existing config or baseline artifacts", windowsOnly, () => {
   const directory = fixture("sandbox-existing-artifacts");
   const evidence = join(directory, "evidence");
   const privateRoot = join(directory, "private");
@@ -243,7 +244,7 @@ test("generator never overwrites existing config or baseline artifacts", () => {
   assert.equal(existsSync(configPath), false);
 });
 
-test("generator rejects an existing config leaf symlink without touching its target", (t) => {
+test("generator rejects an existing config leaf symlink without touching its target", windowsOnly, (t) => {
   const directory = fixture("sandbox-leaf-symlink");
   const evidence = join(directory, "evidence");
   const privateRoot = join(directory, "private");
@@ -278,7 +279,7 @@ test("generator rejects an existing config leaf symlink without touching its tar
   assert.equal(existsSync(baselinePath), false);
 });
 
-test("host baseline comparison is read-only, deterministic, and fails on drift", () => {
+test("host baseline comparison is read-only, deterministic, and fails on drift", windowsOnly, () => {
   const directory = fixture("sandbox-baseline");
   const beforeInventory = join(directory, "before-inventory.json");
   const changedInventory = join(directory, "changed-inventory.json");
@@ -345,7 +346,7 @@ test("bootstrap pins supply chain, keeps auth interactive, and emits fail-closed
   );
 });
 
-test("generated partial compatibility report conforms to the shared runtime evidence contract", () => {
+test("generated partial compatibility report conforms to the shared runtime evidence contract", windowsOnly, () => {
   const directory = fixture("sandbox-partial-contract");
   const review = join(directory, "review.private.json");
   const output = join(directory, "contract");
