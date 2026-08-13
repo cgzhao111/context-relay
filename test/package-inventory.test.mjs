@@ -6,7 +6,7 @@ import test from "node:test";
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 
-test("release bundle contains both selectable plugin manifests and no private runtime artifacts", () => {
+test("release bundle contains all three selectable plugin manifests and no private runtime artifacts", () => {
   const executable = process.platform === "win32" ? (process.env.ComSpec ?? "cmd.exe") : "npm";
   const args = process.platform === "win32"
     ? ["/d", "/s", "/c", "npm.cmd", "pack", "--ignore-scripts", "--dry-run", "--json"]
@@ -25,6 +25,11 @@ test("release bundle contains both selectable plugin manifests and no private ru
     "plugins/execution-budget/skills/execution-budget/SKILL.md",
     "plugins/execution-budget/skills/execution-budget/scripts/estimate-budget.mjs",
     "plugins/execution-budget/skills/execution-budget/scripts/calibrate-budget.mjs",
+    "plugins/async-wait-guard/.codex-plugin/plugin.json",
+    "plugins/async-wait-guard/skills/async-wait-guard/SKILL.md",
+    "plugins/async-wait-guard/skills/async-wait-guard/agents/openai.yaml",
+    "plugins/async-wait-guard/skills/async-wait-guard/scripts/plan-wait.mjs",
+    "plugins/async-wait-guard/skills/async-wait-guard/references/policy.md",
   ]) {
     assert.ok(paths.has(required), `release bundle missing ${required}`);
   }

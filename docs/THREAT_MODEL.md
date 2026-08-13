@@ -89,6 +89,32 @@ labels, aggregate usage, duration, quality flags, and observation time. Local
 calibration is ignored by Git, no telemetry or network service is included,
 and public evidence scanning covers the optional plugin's examples and docs.
 
+### Delayed interaction and stalled-process masking
+
+A long empty poll can be applied to an interactive prompt, or repeated waiting
+can be mistaken for evidence that a process is healthy. Either failure can delay
+required user input, conceal a stalled or failed process, and postpone recovery.
+
+Mitigation: Async Wait Guard applies only after a tool has returned a real
+running handle. Non-empty `write_stdin` input is sent without the long-wait
+policy. A wait duration is a maximum yield, not a claim that the process is
+healthy or must remain silent for that period; early completion and failure are
+handled immediately by the host. The Skill never converts silence into success,
+suppresses error inspection, or starts, stops, retries, or mutates the process.
+
+### Wait optimization weakening safety controls
+
+A token-saving recommendation could be misread as permission to skip approval,
+validation, privacy review, timeout limits, or higher-priority tool contracts.
+
+Mitigation: Async Wait Guard changes only the cadence of eligible waits. Tool
+schema limits and higher-priority instructions win, nested waits preserve the
+required outer margin, and all security, destructive-action, publication, and
+acceptance gates remain unchanged. Implicit invocation is a discovery hint, not
+universal enforcement; `AGENTS.md` is the documented repository-level policy
+surface. The source post's individual savings observation is not treated as a
+fixed benefit, benchmark, or safety justification.
+
 ## Non-goals
 
 - Protecting a compromised host operating system

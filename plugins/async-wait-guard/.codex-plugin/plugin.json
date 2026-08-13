@@ -1,0 +1,39 @@
+{
+  "name": "async-wait-guard",
+  "version": "0.1.0",
+  "description": "Avoid wasteful model wakeups while long-running asynchronous tools are still working.",
+  "author": {
+    "name": "cgzhao111",
+    "url": "https://github.com/cgzhao111"
+  },
+  "homepage": "https://github.com/cgzhao111/context-relay",
+  "repository": "https://github.com/cgzhao111/context-relay",
+  "license": "Apache-2.0",
+  "keywords": [
+    "codex",
+    "async",
+    "polling",
+    "tokens",
+    "productivity"
+  ],
+  "skills": "./skills/",
+  "interface": {
+    "displayName": "Async Wait Guard (Beta)",
+    "shortDescription": "Avoid wasteful polling of long-running tools",
+    "longDescription": "Apply a narrow long-wait policy after a process has already returned a running handle: delay empty polls, keep interactive input immediate, preserve an outer yield margin for nested waits, and avoid unsupported Token-saving claims.",
+    "developerName": "cgzhao111",
+    "category": "Productivity",
+    "capabilities": [
+      "Long-wait planning",
+      "Polling hygiene",
+      "AGENTS policy guidance"
+    ],
+    "websiteURL": "https://github.com/cgzhao111/context-relay",
+    "defaultPrompt": [
+      "Plan an efficient wait for this running asynchronous tool.",
+      "Audit this AGENTS.md long-wait policy.",
+      "Explain whether this polling loop wakes the model unnecessarily."
+    ],
+    "brandColor": "#0F766E"
+  }
+}

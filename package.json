@@ -1,6 +1,6 @@
 {
   "name": "@cgzhao111/context-relay",
-  "version": "0.3.0-rc.1",
+  "version": "0.3.0-rc.2",
   "description": "Evidence-backed handoff packs for long-running AI coding work",
   "type": "module",
   "private": true,
@@ -23,7 +23,8 @@
     "snapshot": "node plugins/context-relay/skills/project-handoff/scripts/snapshot-workspace.mjs",
     "validate:handoff": "node plugins/context-relay/skills/project-handoff/scripts/validate-handoff.mjs",
     "budget:estimate": "node plugins/execution-budget/skills/execution-budget/scripts/estimate-budget.mjs",
-    "budget:calibrate": "node plugins/execution-budget/skills/execution-budget/scripts/calibrate-budget.mjs"
+    "budget:calibrate": "node plugins/execution-budget/skills/execution-budget/scripts/calibrate-budget.mjs",
+    "wait:plan": "node plugins/async-wait-guard/skills/async-wait-guard/scripts/plan-wait.mjs"
   },
   "bin": {
     "context-relay-snapshot": "./plugins/context-relay/skills/project-handoff/scripts/snapshot-workspace.mjs",

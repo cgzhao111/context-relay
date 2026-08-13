@@ -8,6 +8,8 @@ const corePluginRoot = join(root, "plugins", "context-relay");
 const manifest = JSON.parse(readFileSync(join(corePluginRoot, ".codex-plugin", "plugin.json"), "utf8"));
 const budgetPluginRoot = join(root, "plugins", "execution-budget");
 const budgetManifest = JSON.parse(readFileSync(join(budgetPluginRoot, ".codex-plugin", "plugin.json"), "utf8"));
+const waitPluginRoot = join(root, "plugins", "async-wait-guard");
+const waitManifest = JSON.parse(readFileSync(join(waitPluginRoot, ".codex-plugin", "plugin.json"), "utf8"));
 const marketplace = JSON.parse(readFileSync(join(root, ".agents", "plugins", "marketplace.json"), "utf8"));
 const packageJson = JSON.parse(readFileSync(join(root, "package.json"), "utf8"));
 const packageLock = JSON.parse(readFileSync(join(root, "package-lock.json"), "utf8"));
@@ -41,7 +43,7 @@ assert.equal(marketplace.name, manifest.name);
 assert.equal(marketplace.interface?.displayName, manifest.interface?.displayName);
 assert.deepEqual(
   marketplace.plugins?.map(({ name }) => name),
-  ["context-relay", "execution-budget"],
+  ["context-relay", "execution-budget", "async-wait-guard"],
   "the marketplace order and exact separately selectable set must remain stable",
 );
 
@@ -67,10 +69,21 @@ function assertMarketplaceEntry(entry, pluginManifest, expectedPath) {
 
 assertMarketplaceEntry(marketplace.plugins[0], manifest, "./plugins/context-relay");
 assertMarketplaceEntry(marketplace.plugins[1], budgetManifest, "./plugins/execution-budget");
-const coreReal = realpathSync(corePluginRoot);
-const budgetReal = realpathSync(budgetPluginRoot);
-assert.ok(relative(coreReal, budgetReal).startsWith(".."), "Beta source must not be inside the core source");
-assert.ok(relative(budgetReal, coreReal).startsWith(".."), "core source must not be inside the Beta source");
+assertMarketplaceEntry(marketplace.plugins[2], waitManifest, "./plugins/async-wait-guard");
+
+const pluginRoots = [corePluginRoot, budgetPluginRoot, waitPluginRoot].map((path) => realpathSync(path));
+for (let index = 0; index < pluginRoots.length; index += 1) {
+  for (let other = index + 1; other < pluginRoots.length; other += 1) {
+    assert.ok(
+      relative(pluginRoots[index], pluginRoots[other]).startsWith(".."),
+      "each marketplace plugin source must be physically independent",
+    );
+    assert.ok(
+      relative(pluginRoots[other], pluginRoots[index]).startsWith(".."),
+      "each marketplace plugin source must be physically independent",
+    );
+  }
+}
 
 assert.equal(budgetManifest.name, "execution-budget");
 assert.equal(budgetManifest.version, "0.1.0");
@@ -99,6 +112,30 @@ for (const required of [
 const budgetOpenAi = readFileSync(join(budgetSkillRoot, "agents", "openai.yaml"), "utf8");
 assert.match(budgetOpenAi, /default_prompt:\s*"[^"]*\$execution-budget/);
 assert.match(budgetOpenAi, /allow_implicit_invocation:\s*false/);
+
+assert.equal(waitManifest.name, "async-wait-guard");
+assert.equal(waitManifest.version, "0.1.0");
+assert.match(waitManifest.version, strictSemver);
+assert.equal(waitManifest.skills, "./skills/");
+assert.equal(waitManifest.license, "Apache-2.0");
+assert.deepEqual(
+  readdirSync(join(waitPluginRoot, "skills"), { withFileTypes: true })
+    .filter((entry) => entry.isDirectory())
+    .map((entry) => entry.name),
+  ["async-wait-guard"],
+);
+const waitSkillRoot = join(waitPluginRoot, "skills", "async-wait-guard");
+for (const required of [
+  "SKILL.md",
+  "agents/openai.yaml",
+  "scripts/plan-wait.mjs",
+  "references/policy.md",
+]) {
+  assert.ok(existsSync(join(waitSkillRoot, ...required.split("/"))), `missing ${required}`);
+}
+const waitOpenAi = readFileSync(join(waitSkillRoot, "agents", "openai.yaml"), "utf8");
+assert.match(waitOpenAi, /default_prompt:\s*"[^"]*\$async-wait-guard/);
+assert.match(waitOpenAi, /allow_implicit_invocation:\s*true/);
 for (const requiredPackagePath of [".agents/plugins/marketplace.json", "plugins/"]) {
   assert.ok(packageJson.files.includes(requiredPackagePath), `package files must include ${requiredPackagePath}`);
 }

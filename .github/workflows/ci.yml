@@ -31,10 +31,12 @@ jobs:
             codex-rs/skills/src/assets/samples/plugin-creator
             codex-rs/skills/src/assets/samples/skill-creator
       - run: python3 -m pip install --disable-pip-version-check PyYAML==6.0.3
-      - name: Validate both plugin manifests and Skills against pinned official tools
+      - name: Validate all three plugin manifests and Skills against pinned official tools
         shell: bash
         run: |
           python3 .official-codex-validators/codex-rs/skills/src/assets/samples/plugin-creator/scripts/validate_plugin.py plugins/context-relay
           python3 .official-codex-validators/codex-rs/skills/src/assets/samples/plugin-creator/scripts/validate_plugin.py plugins/execution-budget
+          python3 .official-codex-validators/codex-rs/skills/src/assets/samples/plugin-creator/scripts/validate_plugin.py plugins/async-wait-guard
           python3 .official-codex-validators/codex-rs/skills/src/assets/samples/skill-creator/scripts/quick_validate.py plugins/context-relay/skills/project-handoff
           python3 .official-codex-validators/codex-rs/skills/src/assets/samples/skill-creator/scripts/quick_validate.py plugins/execution-budget/skills/execution-budget
+          python3 .official-codex-validators/codex-rs/skills/src/assets/samples/skill-creator/scripts/quick_validate.py plugins/async-wait-guard/skills/async-wait-guard
