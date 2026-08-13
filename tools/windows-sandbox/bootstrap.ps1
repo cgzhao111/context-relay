@@ -118,19 +118,28 @@ function Invoke-CapturedProcess {
 function Invoke-ManualDeviceAuthentication {
     param(
         [Parameter(Mandatory = $true)][string]$CodexCommand,
-        [ValidateRange(1, 3600)][int]$TimeoutSeconds = 900
+        [ValidateRange(1, 3600)][int]$TimeoutSeconds = 900,
+        [string]$DesktopPath = [Environment]::GetFolderPath("Desktop")
     )
 
     $authRoot = Join-Path $script:WorkingRoot "manual-device-authentication"
     $authScriptPath = Join-Path $authRoot "device-authentication.ps1"
     $sentinelPath = Join-Path $authRoot "device-authentication-complete.sentinel"
+    $failureSentinelPath = Join-Path $authRoot "device-authentication-failed.sentinel"
+    if ([string]::IsNullOrWhiteSpace($DesktopPath) -or -not (Test-Path -LiteralPath $DesktopPath -PathType Container)) {
+        throw "The Sandbox desktop was unavailable for the manual authentication launcher."
+    }
+    $launcherPath = Join-Path $DesktopPath "1-CLICK-HERE-CODEX-AUTHORIZATION.cmd"
     New-Item -ItemType Directory -Force -Path $authRoot | Out-Null
-    if (Test-Path -LiteralPath $sentinelPath) {
-        Remove-Item -LiteralPath $sentinelPath -Force
+    foreach ($marker in @($sentinelPath, $failureSentinelPath)) {
+        if (Test-Path -LiteralPath $marker) {
+            Remove-Item -LiteralPath $marker -Force
+        }
     }
 
     $escapedCodexCommand = $CodexCommand.Replace("'", "''")
     $escapedSentinelPath = $sentinelPath.Replace("'", "''")
+    $escapedFailureSentinelPath = $failureSentinelPath.Replace("'", "''")
     $authScript = @"
 `$ErrorActionPreference = 'Stop'
 Set-StrictMode -Version Latest
@@ -153,41 +162,44 @@ try {
     exit 0
 }
 catch {
+    [System.IO.File]::WriteAllText('$escapedFailureSentinelPath', 'FAILED')
     Write-Host 'Authentication was not verified. No runtime probes will run.' -ForegroundColor Red
-    Start-Sleep -Seconds 5
+    Read-Host 'Press ENTER after noting this result'
     exit 1
 }
 "@
     Write-Utf8NoBom -Path $authScriptPath -Value $authScript
 
-    $script:CurrentStage = "manual-device-authentication-launch"
-    $authProcess = Start-Process -FilePath "powershell.exe" -ArgumentList @(
-        "-NoLogo", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $authScriptPath
-    ) -WorkingDirectory $authRoot -WindowStyle Normal -PassThru
+    if ($authScriptPath.Contains('"')) {
+        throw "The generated authentication script path was invalid."
+    }
+    $launcher = @"
+@echo off
+title Codex Device Authentication
+color 0E
+echo Complete the device authorization yourself. This window is not recorded.
+powershell.exe -NoLogo -NoProfile -ExecutionPolicy Bypass -File "$authScriptPath"
+exit /b %ERRORLEVEL%
+"@
+    Write-Utf8NoBom -Path $launcherPath -Value ($launcher + "`r`n")
 
-    $script:CurrentStage = "manual-device-authentication-wait"
+    $script:CurrentStage = "manual-device-authentication-await-user"
+    Write-Host "On the Sandbox desktop, double-click: 1-CLICK-HERE-CODEX-AUTHORIZATION.cmd" -ForegroundColor Yellow
+    Write-Host "The run will wait up to $TimeoutSeconds seconds. Device codes and account output are not captured." -ForegroundColor Yellow
     $deadline = [DateTime]::UtcNow.AddSeconds($TimeoutSeconds)
-    while (-not $authProcess.HasExited) {
+    while (-not (Test-Path -LiteralPath $sentinelPath -PathType Leaf)) {
+        if (Test-Path -LiteralPath $failureSentinelPath -PathType Leaf) {
+            $script:CurrentStage = "manual-device-authentication-user-result"
+            throw "The manual Codex device authentication launcher reported failure."
+        }
         if ([DateTime]::UtcNow -ge $deadline) {
-            try {
-                $authProcess.Kill()
-                $authProcess.WaitForExit(5000) | Out-Null
-            }
-            catch {
-                # The timeout remains authoritative even if process cleanup races with exit.
-            }
             throw "Manual Codex device authentication timed out after $TimeoutSeconds seconds."
         }
         Start-Sleep -Milliseconds 500
-        $authProcess.Refresh()
     }
 
-    $script:CurrentStage = "manual-device-authentication-child-result"
-    if ($authProcess.ExitCode -ne 0) {
-        throw "Manual Codex device authentication exited before successful verification."
-    }
-    if (-not (Test-Path -LiteralPath $sentinelPath -PathType Leaf) -or
-        [System.IO.File]::ReadAllText($sentinelPath) -ne "AUTHENTICATED") {
+    $script:CurrentStage = "manual-device-authentication-user-result"
+    if ([System.IO.File]::ReadAllText($sentinelPath) -ne "AUTHENTICATED") {
         throw "Manual Codex device authentication did not produce a valid completion sentinel."
     }
 
@@ -196,7 +208,7 @@ catch {
     if ($LASTEXITCODE -ne 0) {
         throw "The parent login status check did not confirm authentication."
     }
-    Remove-Item -LiteralPath $sentinelPath -Force
+    Remove-Item -LiteralPath $sentinelPath, $launcherPath -Force
     $script:CurrentStage = "manual-device-authentication-complete"
 }
 
