@@ -20,5 +20,21 @@ jobs:
         with:
           node-version: ${{ matrix.node-version }}
           cache: npm
-      - run: npm install --ignore-scripts
+      - run: npm ci --ignore-scripts
       - run: npm run check
+      - uses: actions/checkout@v7
+        with:
+          repository: openai/codex
+          ref: 4ef836f883c38ba6d39e6920f335ce6452b7de33
+          path: .official-codex-validators
+          sparse-checkout: |
+            codex-rs/skills/src/assets/samples/plugin-creator
+            codex-rs/skills/src/assets/samples/skill-creator
+      - run: python3 -m pip install --disable-pip-version-check PyYAML==6.0.3
+      - name: Validate both plugin manifests and Skills against pinned official tools
+        shell: bash
+        run: |
+          python3 .official-codex-validators/codex-rs/skills/src/assets/samples/plugin-creator/scripts/validate_plugin.py .
+          python3 .official-codex-validators/codex-rs/skills/src/assets/samples/plugin-creator/scripts/validate_plugin.py plugins/execution-budget
+          python3 .official-codex-validators/codex-rs/skills/src/assets/samples/skill-creator/scripts/quick_validate.py skills/project-handoff
+          python3 .official-codex-validators/codex-rs/skills/src/assets/samples/skill-creator/scripts/quick_validate.py plugins/execution-budget/skills/execution-budget

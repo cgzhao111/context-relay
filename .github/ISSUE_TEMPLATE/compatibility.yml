@@ -4,6 +4,13 @@ title: "[Compatibility]: "
 labels: [compatibility]
 body:
   - type: dropdown
+    id: plugin
+    attributes:
+      label: Plugin
+      options: [Context Relay, Execution Budget Beta]
+    validations:
+      required: true
+  - type: dropdown
     id: result
     attributes:
       label: Result
@@ -20,7 +27,7 @@ body:
   - type: input
     id: commit
     attributes:
-      label: Context Relay version or commit
+      label: Plugin version and repository commit
     validations:
       required: true
   - type: textarea

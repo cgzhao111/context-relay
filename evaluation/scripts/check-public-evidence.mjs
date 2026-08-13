@@ -10,7 +10,14 @@ import {
 import { dirname, isAbsolute, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const DEFAULT_SCAN_ROOTS = ["evaluation", "docs", "README.md", "CHANGELOG.md"];
+const DEFAULT_SCAN_ROOTS = [
+  "evaluation",
+  "docs",
+  "plugins",
+  ".agents/plugins/marketplace.json",
+  "README.md",
+  "CHANGELOG.md"
+];
 const DENYLIST_ENV = "CONTEXT_RELAY_PUBLIC_EVIDENCE_DENYLIST";
 const EXCLUDED_PREFIXES = ["evaluation/scripts/"];
 const EVALUATION_HARNESS_EXTENSIONS = new Set([".cjs", ".js", ".mjs", ".ts"]);
@@ -77,8 +84,10 @@ function normalizeRelativePath(value) {
   return value.split(sep).join("/");
 }
 
-function isEvaluationHarness(relativePath) {
-  if (!relativePath.startsWith("evaluation/")) return false;
+function isExecutableHarness(relativePath) {
+  const isEvaluationSource = relativePath.startsWith("evaluation/");
+  const isPluginScript = relativePath.startsWith("plugins/") && relativePath.includes("/scripts/");
+  if (!isEvaluationSource && !isPluginScript) return false;
   const fileName = relativePath.slice(relativePath.lastIndexOf("/") + 1);
   const dot = fileName.lastIndexOf(".");
   return dot >= 0 && EVALUATION_HARNESS_EXTENSIONS.has(fileName.slice(dot).toLowerCase());
@@ -162,10 +171,10 @@ function collectFiles(repositoryRoot, scanRoots) {
     }
     if (stats.isFile()) {
       const normalized = normalizeRelativePath(relativePath);
-      // Executable evaluation harnesses intentionally contain synthetic leak
-      // canaries and detector expressions. Their generated evidence is scanned;
+      // Executable harnesses intentionally contain regular expressions and
+      // synthetic leak canaries. Their generated artifacts are scanned;
       // source-code credentials remain covered by repository-check.mjs.
-      if (!isEvaluationHarness(normalized)) files.push({ absolute: path, relative: normalized });
+      if (!isExecutableHarness(normalized)) files.push({ absolute: path, relative: normalized });
     }
   }
 

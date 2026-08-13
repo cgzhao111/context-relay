@@ -1,0 +1,133 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/cgzhao111/context-relay/blob/main/plugins/execution-budget/skills/execution-budget/references/execution-budget.schema.json",
+  "title": "Execution Budget Estimate",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version", "estimate_kind", "task_type", "size_bucket", "workload",
+    "risk", "ambiguity", "runtime", "usage_observability", "enforcement",
+    "recommended_mode", "show_budget_card", "requires_upfront_confirmation",
+    "limit_conflicts", "options", "autonomy", "caveats"
+  ],
+  "properties": {
+    "schema_version": { "const": "1.0" },
+    "estimate_kind": { "enum": ["HEURISTIC_RANGE", "CALIBRATED_RANGE"] },
+    "task_type": { "$ref": "#/$defs/taskType" },
+    "size_bucket": { "$ref": "#/$defs/sizeBucket" },
+    "workload": { "$ref": "#/$defs/sizeBucket" },
+    "risk": { "enum": ["low", "medium", "high", "critical"] },
+    "ambiguity": { "enum": ["low", "medium", "high"] },
+    "runtime": { "$ref": "#/$defs/runtime" },
+    "usage_observability": { "enum": ["NONE", "POST_RUN", "LIVE_HOST_TELEMETRY"] },
+    "enforcement": { "enum": ["ADVISORY", "POST_RUN_RECONCILE", "MONITORED"] },
+    "recommended_mode": { "$ref": "#/$defs/mode" },
+    "show_budget_card": { "type": "boolean" },
+    "requires_upfront_confirmation": { "type": "boolean" },
+    "limit_conflicts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["token", "time"],
+      "properties": {
+        "token": { "type": "boolean" },
+        "time": { "type": "boolean" }
+      }
+    },
+    "options": {
+      "type": "array",
+      "minItems": 3,
+      "maxItems": 3,
+      "items": { "$ref": "#/$defs/option" }
+    },
+    "autonomy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["may_proceed", "pause_when"],
+      "properties": {
+        "may_proceed": { "$ref": "#/$defs/strings" },
+        "pause_when": { "$ref": "#/$defs/nonEmptyStrings" }
+      }
+    },
+    "caveats": { "$ref": "#/$defs/nonEmptyStrings" }
+  },
+  "$defs": {
+    "taskType": {
+      "enum": [
+        "status_query", "research", "single_file_change", "multi_file_change",
+        "debugging", "architecture", "release", "migration", "other"
+      ]
+    },
+    "sizeBucket": { "enum": ["small", "medium", "large"] },
+    "mode": { "enum": ["quick", "standard", "deep"] },
+    "runtime": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "host_family", "host_version_bucket", "model_tier",
+        "reasoning_effort", "parallelism"
+      ],
+      "properties": {
+        "host_family": { "enum": ["generic", "codex"] },
+        "host_version_bucket": {
+          "type": "string",
+          "pattern": "^(?:unknown|[0-9]+(?:\\.[0-9]+){0,2})$"
+        },
+        "model_tier": { "enum": ["unknown", "balanced", "frontier"] },
+        "reasoning_effort": { "enum": ["unknown", "low", "medium", "high", "max", "ultra"] },
+        "parallelism": { "enum": ["single", "multi"] }
+      }
+    },
+    "strings": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "nonEmptyStrings": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "range": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "max", "confidence"],
+      "properties": {
+        "min": { "type": "number", "minimum": 0 },
+        "max": { "type": "number", "minimum": 0 },
+        "confidence": { "enum": ["low", "medium", "high"] }
+      }
+    },
+    "tokenRange": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["min", "max", "confidence", "basis", "samples"],
+      "properties": {
+        "min": { "type": "number", "minimum": 0 },
+        "max": { "type": "number", "minimum": 0 },
+        "confidence": { "enum": ["low", "medium", "high"] },
+        "basis": { "enum": ["HEURISTIC_RANGE", "CALIBRATED_RANGE"] },
+        "samples": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "scope": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["includes", "omits", "validation"],
+      "properties": {
+        "includes": { "$ref": "#/$defs/nonEmptyStrings" },
+        "omits": { "$ref": "#/$defs/strings" },
+        "validation": { "type": "string", "minLength": 1 }
+      }
+    },
+    "option": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "token_estimate", "time_estimate_minutes", "scope"],
+      "properties": {
+        "mode": { "$ref": "#/$defs/mode" },
+        "token_estimate": { "$ref": "#/$defs/tokenRange" },
+        "time_estimate_minutes": { "$ref": "#/$defs/range" },
+        "scope": { "$ref": "#/$defs/scope" }
+      }
+    }
+  }
+}
